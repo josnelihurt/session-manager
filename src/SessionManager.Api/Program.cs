@@ -3,6 +3,7 @@ using SessionManager.Api.Configuration;
 using SessionManager.Api.Services;
 using SessionManager.Api.Models;
 using StackExchange.Redis;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,12 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 });
 
 builder.Services.AddSingleton<ISessionService, RedisSessionService>();
+
+// Configure JSON serialization for Native AOT
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.TypeInfoResolver = AppJsonContext.Default;
+});
 
 // CORS
 var corsOptions = builder.Configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>() ?? new CorsOptions();
@@ -51,6 +58,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Configure URLs to listen on port 8080
+app.Urls.Add("http://*:8080");
 
 app.UseCors("AllowFrontend");
 

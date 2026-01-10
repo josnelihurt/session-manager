@@ -24,8 +24,8 @@ RUN dotnet publish "SessionManager.Api.csproj" \
 # Runtime stage - pure Alpine (no .NET runtime needed)
 FROM alpine:latest AS runtime
 
-# Install runtime dependencies
-RUN apk --no-cache add ca-certificates libgcc
+# Install runtime dependencies (including ICU for Native AOT globalization)
+RUN apk --no-cache add ca-certificates libgcc icu-libs
 
 WORKDIR /app
 EXPOSE 8080
