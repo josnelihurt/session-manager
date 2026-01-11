@@ -1,0 +1,16 @@
+{
+  "name": "session-manager-e2e",
+  "version": "1.0.0",
+  "description": "E2E tests for Session Manager",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "install:drivers": "npx playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2"
+  }
+}
