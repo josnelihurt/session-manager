@@ -1,0 +1,11 @@
+# E2E Test Results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Dependencies
+node_modules/
+
+# Environment
+.env.local
+.env.*.local
