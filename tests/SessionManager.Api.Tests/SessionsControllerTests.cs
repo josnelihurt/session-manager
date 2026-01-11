@@ -5,6 +5,7 @@ using Moq;
 using SessionManager.Api.Controllers;
 using SessionManager.Api.Models;
 using SessionManager.Api.Services;
+using Xunit;
 
 namespace SessionManager.Api.Tests;
 

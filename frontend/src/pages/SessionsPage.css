@@ -1,0 +1,202 @@
+/* josnelihurt.me inspired sessions page styling */
+.sessions-page {
+  min-height: 100vh;
+  background: #f9f9f9;
+}
+
+.sessions-page .container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.sessions-page .header {
+  margin-bottom: 2rem;
+}
+
+.sessions-page .header h1 {
+  font-size: 2rem;
+  font-weight: 400;
+  color: var(--color-primary, #ffa400);
+  margin: 0 0 0.5rem 0;
+}
+
+.sessions-page .subtitle {
+  color: var(--color-text, #939393);
+  margin: 0;
+}
+
+.sessions-page .actions-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sessions-table thead {
+  background: var(--color-primary, #ffa400);
+  color: #fff;
+}
+
+.sessions-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sessions-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #ececec;
+  color: var(--color-text, #939393);
+}
+
+.sessions-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.sessions-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.session-id code {
+  background: #f9f9f9;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: var(--color-text-dark, #333);
+  border: 1px solid #ececec;
+}
+
+.expires-at {
+  font-size: 0.9rem;
+  color: var(--color-text, #939393);
+}
+
+.remaining {
+  font-weight: 600;
+  color: #28a745;
+}
+
+.expired {
+  font-weight: 600;
+  color: #dc3545;
+}
+
+.alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.alert-error {
+  background: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid #dc3545;
+}
+
+.alert-success {
+  background: #d4edda;
+  color: #155724;
+  border-left: 4px solid #28a745;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.alert-close:hover {
+  opacity: 1;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--color-text, #939393);
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text, #939393);
+}
+
+.footer {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  text-align: center;
+  color: var(--color-text, #939393);
+  font-size: 0.9rem;
+}
+
+.btn {
+  background: var(--color-primary, #ffa400);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--color-primary-hover, #e59400);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(255, 164, 0, 0.2);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.btn-danger {
+  background: #dc3545;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.btn-secondary {
+  background: var(--color-text, #939393);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-text-dark, #333);
+}

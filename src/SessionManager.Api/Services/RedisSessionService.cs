@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Options;
 using SessionManager.Api.Configuration;
 using SessionManager.Api.Models;
+using SessionManager.Api.Models.Auth;
 using StackExchange.Redis;
+using System.Text.Json;
 
 namespace SessionManager.Api.Services;
 
@@ -78,6 +80,53 @@ public class RedisSessionService : ISessionService
 
         _logger.LogInformation("Deleted {Count} sessions", count);
         return count;
+    }
+
+    public async Task<string> CreateSessionAsync(Guid userId, string username, string email, bool isSuperAdmin, string ipAddress, string userAgent)
+    {
+        var sessionKey = $"session_manager:{Guid.NewGuid():N}";
+        var db = _redis.GetDatabase();
+
+        // Create session data with 4 hour expiry
+        var sessionData = new SessionData(
+            UserId: userId,
+            Username: username,
+            Email: email,
+            IsSuperAdmin: isSuperAdmin,
+            ExpiresAt: DateTime.UtcNow.AddHours(4)
+        );
+
+        var json = JsonSerializer.Serialize(sessionData, AppJsonContext.Default.SessionData);
+        var expiry = TimeSpan.FromHours(4);
+
+        await db.StringSetAsync(sessionKey, json, expiry);
+
+        _logger.LogInformation("Created session {Session} for user {User}", sessionKey, username);
+
+        return sessionKey;
+    }
+
+    public async Task<SessionData?> GetSessionAsync(string sessionKey)
+    {
+        var db = _redis.GetDatabase();
+        var json = await db.StringGetAsync(sessionKey);
+
+        if (json.IsNullOrEmpty) return null;
+
+        return JsonSerializer.Deserialize(json!, AppJsonContext.Default.SessionData);
+    }
+
+    public async Task<bool> InvalidateSessionAsync(string sessionKey)
+    {
+        var db = _redis.GetDatabase();
+        var deleted = await db.KeyDeleteAsync(sessionKey);
+
+        if (deleted)
+        {
+            _logger.LogInformation("Invalidated session {Session}", sessionKey);
+        }
+
+        return deleted;
     }
 
     private static (string SessionId, string CookiePrefix) ParseSessionKey(string key)

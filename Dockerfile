@@ -1,9 +1,5 @@
-# Build stage - Native AOT for Alpine (musl)
+# Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
-
-# Install Native AOT prerequisites (clang and zlib for Alpine)
-RUN apk add --no-cache clang zlib-dev
-
 WORKDIR /src
 
 # Copy csproj and restore dependencies
@@ -13,24 +9,20 @@ RUN dotnet restore "SessionManager.Api/SessionManager.Api.csproj"
 # Copy the rest of the application
 COPY src/SessionManager.Api/ SessionManager.Api/
 
-# Build and publish with Native AOT for Alpine (linux-musl-x64)
+# Build and publish
 WORKDIR /src/SessionManager.Api
 RUN dotnet publish "SessionManager.Api.csproj" \
     -c Release \
-    -r linux-musl-x64 \
-    -p:PublishAot=true \
+    -r linux-x64 \
+    --no-restore \
     -o /app/publish
 
-# Runtime stage - pure Alpine (no .NET runtime needed)
-FROM alpine:latest AS runtime
-
-# Install runtime dependencies (including ICU for Native AOT globalization)
-RUN apk --no-cache add ca-certificates libgcc icu-libs
-
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
 WORKDIR /app
 EXPOSE 8080
 
-# Copy native binary
-COPY --from=build /app/publish/SessionManager.Api .
+# Copy published app
+COPY --from=build /app/publish .
 
-ENTRYPOINT ["./SessionManager.Api"]
+ENTRYPOINT ["dotnet", "SessionManager.Api.dll"]

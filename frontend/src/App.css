@@ -1,0 +1,101 @@
+/* josnelihurt.me inspired styling */
+:root {
+  --color-primary: #ffa400;
+  --color-primary-hover: #e59400;
+  --color-secondary: #939393;
+  --color-background: #ffffff;
+  --color-background-alt: #f9f9f9;
+  --color-text: #939393;
+  --color-text-dark: #333333;
+  --color-text-darker: #202020;
+  --color-border: #cecece;
+  --color-border-light: #ececec;
+  --color-footer-bg: #202020;
+  --color-footer-text: #ffffff;
+  --font-family: Lato, "Helvetica Neue", Helvetica, sans-serif;
+  --border-radius: 4px;
+  --shadow-sm: 0px 2px 8px 0px rgba(50, 50, 50, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+a {
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover,
+a:active {
+  color: var(--color-primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 2.5em;
+  font-weight: 300;
+}
+
+h2 {
+  font-size: 1.5em;
+  font-weight: 400;
+}
+
+h3 {
+  font-size: 1.25em;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+  background: var(--color-background-alt);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+/* Utility classes */
+.background-band {
+  background: var(--color-background-alt);
+  border-bottom: 1px solid #f0f0f0;
+  padding: 60px 0;
+}
+
+.space-top1 {
+  margin-top: 70px;
+}
+
+.space-bottom1 {
+  margin-bottom: 70px;
+}
+
+.space-top2 {
+  margin-top: 140px;
+}
