@@ -87,3 +87,6 @@ Thumbs.db
 
 # Docker
 .dockerignore
+
+# IA Tools
+.claude
