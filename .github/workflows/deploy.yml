@@ -7,17 +7,13 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_API: ghcr.io/${{ github.repository_owner }}/session-manager-api
-  IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/session-manager-frontend
   SSH_HOST: vultur.josnelihurt.me
   SSH_USER: jrb
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
@@ -25,63 +21,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Build API image
-      - name: Extract API metadata
-        id: api-meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_API }}
-          tags: |
-            type=sha,prefix=
-            type=raw,value=latest
-
-      - name: Build API image
-        id: api-build
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.api-meta.outputs.tags }}
-          labels: ${{ steps.api-meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # Build Frontend image
-      - name: Extract Frontend metadata
-        id: frontend-meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_FRONTEND }}
-          tags: |
-            type=sha,prefix=
-            type=raw,value=latest
-
-      - name: Build Frontend image
-        id: frontend-build
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.frontend-meta.outputs.tags }}
-          labels: ${{ steps.frontend-meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # Deploy to server
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -101,8 +40,8 @@ jobs:
 
             # Pull new images
             echo "Pulling new images..."
-            docker pull ${{ env.IMAGE_API }}:latest
-            docker pull ${{ env.IMAGE_FRONTEND }}:latest
+            docker pull ghcr.io/josnelihurt/session-manager-api:latest
+            docker pull ghcr.io/josnelihurt/session-manager-frontend:latest
 
             # Start API container
             echo "Starting API container..."
@@ -131,7 +70,7 @@ jobs:
               --log-driver json-file \
               --log-opt max-size=10m \
               --log-opt max-file=3 \
-              ${{ env.IMAGE_API }}:latest
+              ghcr.io/josnelihurt/session-manager-api:latest
 
             # Start Frontend container
             echo "Starting Frontend container..."
@@ -156,7 +95,7 @@ jobs:
               --log-driver json-file \
               --log-opt max-size=10m \
               --log-opt max-file=3 \
-              ${{ env.IMAGE_FRONTEND }}:latest
+              ghcr.io/josnelihurt/session-manager-frontend:latest
 
             # Verify containers are running
             echo "Verifying containers..."
@@ -173,7 +112,6 @@ jobs:
       - name: Verify deployment
         run: |
           echo "Verifying deployment..."
-          # Check if containers are accessible
           curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/ || echo "Frontend check failed"
           curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/api/health || echo "API check failed"
           echo "Deployment verification complete"
