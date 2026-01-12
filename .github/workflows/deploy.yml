@@ -175,23 +175,28 @@ jobs:
       - name: Verify deployment
         run: |
           echo "Verifying deployment..."
-          FRONTEND_STATUS=$(curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/ || echo "000")
-          API_STATUS=$(curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/api/health || echo "000")
 
+          # Check frontend
+          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/)
           echo "Frontend status: $FRONTEND_STATUS"
+
+          # Check API root (should return 404 for non-existent routes, which means API is running)
+          API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/api/health || echo "000")
           echo "API status: $API_STATUS"
 
+          # Verify frontend is accessible
           if [ "$FRONTEND_STATUS" = "200" ] || [ "$FRONTEND_STATUS" = "304" ]; then
             echo "✓ Frontend is accessible"
           else
-            echo "✗ Frontend check failed"
+            echo "✗ Frontend check failed (status: $FRONTEND_STATUS)"
             exit 1
           fi
 
-          if [ "$API_STATUS" = "200" ] || [ "$API_STATUS" = "404" ]; then
-            echo "✓ API is accessible (404 is expected for /api/health if endpoint doesn't exist)"
+          # For API, accept 200, 401, 403, or 404 (all mean API is running)
+          if [[ "$API_STATUS" =~ ^(200|401|403|404)$ ]]; then
+            echo "✓ API is accessible (status: $API_STATUS)"
           else
-            echo "✗ API check failed"
+            echo "✗ API check failed (status: $API_STATUS)"
             exit 1
           fi
 
