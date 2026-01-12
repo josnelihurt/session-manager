@@ -23,7 +23,11 @@ public static class ForwardAuthEndpoints
             if (string.IsNullOrEmpty(sessionKey))
             {
                 logger.LogDebug("ForwardAuth: No session cookie");
-                return Results.StatusCode(401);
+                var html = UnauthorizedPageBuilder.BuildUnauthorizedPage();
+                response.StatusCode = 401;
+                response.ContentType = "text/html; charset=utf-8";
+                await response.WriteAsync(html);
+                return Results.Empty;
             }
 
             // Validate session
@@ -31,7 +35,11 @@ public static class ForwardAuthEndpoints
             if (user == null)
             {
                 logger.LogDebug("ForwardAuth: Invalid session {Session}", sessionKey[..8]);
-                return Results.StatusCode(401);
+                var html = UnauthorizedPageBuilder.BuildUnauthorizedPage();
+                response.StatusCode = 401;
+                response.ContentType = "text/html; charset=utf-8";
+                await response.WriteAsync(html);
+                return Results.Empty;
             }
 
             // Get requested application URL from Traefik headers
@@ -50,7 +58,13 @@ public static class ForwardAuthEndpoints
                 {
                     logger.LogWarning("ForwardAuth: User {User} denied access to {App}",
                         user.Username, applicationUrl);
-                    return Results.StatusCode(403);
+
+                    // Return custom 403 HTML page
+                    var html = ForbiddenPageBuilder.BuildForbiddenPage(null);
+                    response.StatusCode = 403;
+                    response.ContentType = "text/html; charset=utf-8";
+                    await response.WriteAsync(html);
+                    return Results.Empty;
                 }
             }
 
@@ -69,6 +83,7 @@ public static class ForwardAuthEndpoints
         // GET /auth-forward - Lightweight forward auth with application access check
         app.MapGet("/auth-forward", async (
             HttpRequest request,
+            HttpResponse response,
             IAuthService authService,
             IOptions<AuthOptions> authOptions,
             ILogger<Program> logger) =>
@@ -78,13 +93,23 @@ public static class ForwardAuthEndpoints
 
             if (string.IsNullOrEmpty(sessionKey))
             {
-                return Results.StatusCode(401);
+                logger.LogDebug("ForwardAuth: No session cookie");
+                var html = ForbiddenPageBuilder.BuildForbiddenPage(null);
+                response.StatusCode = 403;
+                response.ContentType = "text/html; charset=utf-8";
+                await response.WriteAsync(html);
+                return Results.Empty;
             }
 
             var user = await authService.GetCurrentUserAsync(sessionKey);
             if (user == null)
             {
-                return Results.StatusCode(401);
+                logger.LogDebug("ForwardAuth: Invalid session");
+                var html = ForbiddenPageBuilder.BuildForbiddenPage(null);
+                response.StatusCode = 403;
+                response.ContentType = "text/html; charset=utf-8";
+                await response.WriteAsync(html);
+                return Results.Empty;
             }
 
             // Get requested application URL from Traefik headers
@@ -100,7 +125,13 @@ public static class ForwardAuthEndpoints
                 {
                     logger.LogWarning("ForwardAuth: User {User} denied access to {App}",
                         user.Username, applicationUrl);
-                    return Results.StatusCode(403);
+
+                    // Return custom 403 HTML page
+                    var html = ForbiddenPageBuilder.BuildForbiddenPage(null);
+                    response.StatusCode = 403;
+                    response.ContentType = "text/html; charset=utf-8";
+                    await response.WriteAsync(html);
+                    return Results.Empty;
                 }
             }
 
@@ -108,6 +139,24 @@ public static class ForwardAuthEndpoints
             request.HttpContext.Response.Headers.Append("X-Auth-Request-Email", user.Email);
 
             return Results.Text("");
+        });
+
+        // GET /api/static/403.png - Serve the wizard image
+        app.MapGet("/api/static/403.png", async (HttpResponse response, CancellationToken cancellationToken) =>
+        {
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var resourceName = "SessionManager.Api.Assets.403.png";
+
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream == null)
+            {
+                return Results.NotFound("Image not found in assembly");
+            }
+
+            response.ContentType = "image/png";
+            response.StatusCode = 200;
+            await stream.CopyToAsync(response.Body, cancellationToken);
+            return Results.Empty;
         });
     }
 }

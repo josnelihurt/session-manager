@@ -9,6 +9,18 @@ const apiClient = axios.create({
   },
 })
 
+// Add response interceptor to handle 403 errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 403) {
+      window.location.href = '/forbidden'
+      return Promise.reject(error)
+    }
+    return Promise.reject(error)
+  }
+)
+
 export const api = apiClient
 
 export const getSessions = async () => {

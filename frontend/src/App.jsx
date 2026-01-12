@@ -4,6 +4,7 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SessionsPage } from './pages/SessionsPage'
+import { ForbiddenPage } from './pages/ForbiddenPage'
 import { UsersPage } from './pages/admin/UsersPage'
 import { InvitationsPage } from './pages/admin/InvitationsPage'
 import { ApplicationsPage } from './pages/admin/ApplicationsPage'
@@ -88,6 +89,7 @@ function App() {
               </AdminRoute>
             }
           />
+          <Route path="/forbidden" element={<ForbiddenPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AuthProvider>

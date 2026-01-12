@@ -18,4 +18,8 @@
     <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\403.png" />
+  </ItemGroup>
+
 </Project>
