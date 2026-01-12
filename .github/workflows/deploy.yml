@@ -126,6 +126,10 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ env.SSH_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Copy docker-compose to server
+        run: |
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa deploy/docker-compose.yaml ${{ env.SSH_USER }}@${{ env.SSH_HOST }}:~/infra/services/compose/session-manager.yaml
+
       - name: Deploy to vultur server
         run: |
           ssh ${{ env.SSH_USER }}@${{ env.SSH_HOST }} << 'ENDSSH'
@@ -135,11 +139,6 @@ jobs:
 
             # Create deploy directory if not exists
             mkdir -p ~/infra/services/compose
-
-            # Copy docker-compose file
-            cat > ~/infra/services/compose/session-manager.yaml << 'COMPOSE_EOF'
-          $(cat deploy/docker-compose.yaml)
-          COMPOSE_EOF
 
             # Stop existing containers
             echo "Stopping existing containers..."
