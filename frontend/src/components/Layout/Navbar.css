@@ -15,9 +15,9 @@
   font-weight: 600;
   color: var(--color-primary, #ffa400);
   text-decoration: none;
-  padding: 10px 0 0 0;
+  padding: 0;
   height: 65px;
-  line-height: 40px;
+  line-height: 65px;
   transition: color 0.3s ease;
 }
 
@@ -34,7 +34,7 @@
 .nav-link {
   color: var(--color-text-dark, #333);
   text-decoration: none;
-  padding: 0.5rem 1rem;
+  padding: 0 1rem;
   border-radius: 4px;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -43,7 +43,7 @@
   font-size: 14px;
   font-weight: 700;
   height: 65px;
-  line-height: 38px;
+  line-height: 65px;
 }
 
 .nav-link:hover {
