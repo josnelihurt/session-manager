@@ -12,7 +12,7 @@ export function InvitationsPage() {
   const [selectedInvitations, setSelectedInvitations] = useState(new Set())
 
   const [email, setEmail] = useState('')
-  const [provider, setProvider] = useState('any')
+  const [provider, setProvider] = useState('local')
   const [selectedRoles, setSelectedRoles] = useState([])
   const [creating, setCreating] = useState(false)
   const [createdInvite, setCreatedInvite] = useState(null)
@@ -109,7 +109,7 @@ export function InvitationsPage() {
 
   const resetCreateForm = () => {
     setEmail('')
-    setProvider('any')
+    setProvider('local')
     setSelectedRoles([])
     setCreatedInvite(null)
     setShowCreateModal(false)
@@ -273,7 +273,6 @@ export function InvitationsPage() {
                       value={provider}
                       onChange={(e) => setProvider(e.target.value)}
                     >
-                      <option value="any">Any</option>
                       <option value="google">Google only</option>
                       <option value="local">Local only</option>
                     </select>
