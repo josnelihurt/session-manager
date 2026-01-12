@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using SessionManager.Api.Configuration;
 using SessionManager.Api.Models.Invitations;
 using SessionManager.Api.Services;
 
@@ -11,15 +13,18 @@ public class InvitationsController : ControllerBase
     private readonly IInvitationService _invitationService;
     private readonly IAuthService _authService;
     private readonly ILogger<InvitationsController> _logger;
+    private readonly AuthOptions _authOptions;
 
     public InvitationsController(
         IInvitationService invitationService,
         IAuthService authService,
-        ILogger<InvitationsController> logger)
+        ILogger<InvitationsController> logger,
+        IOptions<AuthOptions> authOptions)
     {
         _invitationService = invitationService;
         _authService = authService;
         _logger = logger;
+        _authOptions = authOptions.Value;
     }
 
     /// <summary>
@@ -38,8 +43,7 @@ public class InvitationsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<InvitationDto>> Create([FromBody] CreateInvitationRequest request)
     {
-        // Get current user from session
-        var sessionKey = Request.Cookies["_session_manager"];
+        var sessionKey = Request.Cookies[_authOptions.CookieName];
         if (string.IsNullOrEmpty(sessionKey))
         {
             return Unauthorized(new { error = "Not authenticated" });

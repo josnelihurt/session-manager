@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using SessionManager.Api.Configuration;
 using SessionManager.Api.Models.Applications;
 using SessionManager.Api.Services;
 using System.Text.Json;
@@ -11,13 +13,16 @@ public class ApplicationsController : ControllerBase
 {
     private readonly IApplicationService _applicationService;
     private readonly ILogger<ApplicationsController> _logger;
+    private readonly AuthOptions _authOptions;
 
     public ApplicationsController(
         IApplicationService applicationService,
-        ILogger<ApplicationsController> logger)
+        ILogger<ApplicationsController> logger,
+        IOptions<AuthOptions> authOptions)
     {
         _applicationService = applicationService;
         _logger = logger;
+        _authOptions = authOptions.Value;
     }
 
     /// <summary>
@@ -37,7 +42,7 @@ public class ApplicationsController : ControllerBase
     public async Task<ActionResult<IEnumerable<ApplicationDto>>> GetMyApps(
         [FromServices] IAuthService authService)
     {
-        var sessionKey = Request.Cookies["_session_manager"];
+        var sessionKey = Request.Cookies[_authOptions.CookieName];
         if (string.IsNullOrEmpty(sessionKey))
         {
             return Unauthorized(new { error = "Not authenticated" });
