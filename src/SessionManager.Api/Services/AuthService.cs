@@ -218,13 +218,16 @@ public class AuthService : IAuthService
         // Super admin can access everything
         if (session.IsSuperAdmin) return true;
 
+        // Normalize URL (lowercase, trim)
+        var normalizedUrl = applicationUrl?.ToLowerInvariant()?.Trim() ?? "";
+
         // Check if user has any role for this application
         var hasAccess = await _dbContext.UserRoles
             .Include(ur => ur.Role)
             .ThenInclude(r => r.Application)
             .AnyAsync(ur =>
                 ur.UserId == session.UserId &&
-                ur.Role.Application.Url == applicationUrl &&
+                ur.Role.Application.Url == normalizedUrl &&
                 ur.Role.Application.IsActive);
 
         return hasAccess;

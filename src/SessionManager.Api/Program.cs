@@ -438,11 +438,12 @@ app.MapGet("/auth", async (
     return Results.Ok();
 });
 
-// GET /auth-forward - Lightweight forward auth
+// GET /auth-forward - Lightweight forward auth with application access check
 app.MapGet("/auth-forward", async (
     HttpRequest request,
     IAuthService authService,
-    IOptions<AuthOptions> authOptions) =>
+    IOptions<AuthOptions> authOptions,
+    ILogger<Program> logger) =>
 {
     var cookieName = authOptions.Value.CookieName;
     var sessionKey = request.Cookies[cookieName];
@@ -456,6 +457,23 @@ app.MapGet("/auth-forward", async (
     if (user == null)
     {
         return Results.StatusCode(401);
+    }
+
+    // Get requested application URL from Traefik headers
+    var forwardedHost = request.Headers["X-Forwarded-Host"].FirstOrDefault();
+    var applicationUrl = forwardedHost ?? "";
+
+    // Super admin bypasses permission check
+    if (!user.IsSuperAdmin)
+    {
+        // Check permission for this application
+        var hasAccess = await authService.CanAccessApplicationAsync(sessionKey, applicationUrl);
+        if (!hasAccess)
+        {
+            logger.LogWarning("ForwardAuth: User {User} denied access to {App}",
+                user.Username, applicationUrl);
+            return Results.StatusCode(403);
+        }
     }
 
     request.HttpContext.Response.Headers.Append("X-Auth-Request-User", user.Username);
