@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { AdminLayout } from '../components/Layout/AdminLayout'
 import { useAuth } from '../contexts/AuthContext'
-import { RoleSelector } from '../components/RoleSelector'
-import { getMyApplications, getAllApplications, getSessions, deleteSession, deleteAllSessions, getAllUsers, assignUserRoles, removeUserRole, setUserActive } from '../api'
+import { getMyApplications, getSessions, deleteSession, deleteAllSessions } from '../api'
 import './DashboardPage.css'
 
 export function DashboardPage() {
@@ -17,14 +15,6 @@ export function DashboardPage() {
   const [sessionsError, setSessionsError] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [sessionsMessage, setSessionsMessage] = useState(null)
-
-  // User management state (super admin only)
-  const [users, setUsers] = useState([])
-  const [usersLoading, setUsersLoading] = useState(true)
-  const [usersError, setUsersError] = useState(null)
-  const [allApplications, setAllApplications] = useState([])
-  const [selectedUser, setSelectedUser] = useState(null)
-  const [showRoleModal, setShowRoleModal] = useState(false)
 
   // Load applications
   useEffect(() => {
@@ -49,13 +39,6 @@ export function DashboardPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Load users (super admin only)
-  useEffect(() => {
-    if (isSuperAdmin) {
-      loadUsersAndApps()
-    }
-  }, [isSuperAdmin])
-
   const loadSessions = async () => {
     setSessionsLoading(true)
     setSessionsError(null)
@@ -67,24 +50,6 @@ export function DashboardPage() {
       console.error(err)
     } finally {
       setSessionsLoading(false)
-    }
-  }
-
-  const loadUsersAndApps = async () => {
-    setUsersLoading(true)
-    setUsersError(null)
-    try {
-      const [usersData, appsData] = await Promise.all([
-        getAllUsers(),
-        getAllApplications()
-      ])
-      setUsers(usersData)
-      setAllApplications(appsData)
-    } catch (err) {
-      setUsersError('Failed to load users')
-      console.error(err)
-    } finally {
-      setUsersLoading(false)
     }
   }
 
@@ -126,39 +91,10 @@ export function DashboardPage() {
     setTimeout(() => setSessionsMessage(null), 5000)
   }
 
-  // User management actions
-  const handleToggleActive = async (user) => {
-    try {
-      await setUserActive(user.id, !user.isActive)
-      loadUsersAndApps()
-    } catch (err) {
-      setUsersError('Failed to update user')
-    }
-  }
-
-  const handleEditRoles = (user) => {
-    setSelectedUser(user)
-    setShowRoleModal(true)
-  }
-
-  const handleRoleChange = async (roleId, checked) => {
-    if (!selectedUser) return
-
-    try {
-      if (checked) {
-        const currentRoleIds = selectedUser.roles.map(r => r.roleId)
-        await assignUserRoles(selectedUser.id, [...currentRoleIds, roleId])
-      } else {
-        await removeUserRole(selectedUser.id, roleId)
-      }
-      const updatedUsers = await getAllUsers()
-      setUsers(updatedUsers)
-      const updatedUser = updatedUsers.find(u => u.id === selectedUser.id)
-      setSelectedUser(updatedUser)
-    } catch (err) {
-      setUsersError('Failed to update roles')
-    }
-  }
+  // Calculate stats
+  const activeSessionsCount = sessions.filter(s => s.ttl >= 0).length
+  const expiredSessionsCount = sessions.filter(s => s.ttl < 0).length
+  const applicationsCount = applications.length
 
   return (
     <AdminLayout title="Dashboard">
@@ -169,6 +105,33 @@ export function DashboardPage() {
           <p>Email: {user?.email}</p>
           <p>Account type: {isSuperAdmin ? 'Super Admin' : 'User'}</p>
         </section>
+
+        {/* Stats Counters */}
+        <div className="stats-grid">
+          <div className="stat-card stat-card-primary">
+            <div className="stat-icon">🔐</div>
+            <div className="stat-content">
+              <div className="stat-value">{sessionsLoading ? '...' : activeSessionsCount}</div>
+              <div className="stat-label">Active Sessions</div>
+            </div>
+          </div>
+
+          <div className="stat-card stat-card-warning">
+            <div className="stat-icon">⏰</div>
+            <div className="stat-content">
+              <div className="stat-value">{sessionsLoading ? '...' : expiredSessionsCount}</div>
+              <div className="stat-label">Expired Sessions</div>
+            </div>
+          </div>
+
+          <div className="stat-card stat-card-success">
+            <div className="stat-icon">👥</div>
+            <div className="stat-content">
+              <div className="stat-value">{applicationsCount}</div>
+              <div className="stat-label">Your Applications</div>
+            </div>
+          </div>
+        </div>
 
         {/* OAuth2 Sessions Management */}
         <section className="sessions-section">
@@ -260,112 +223,6 @@ export function DashboardPage() {
           )}
         </section>
 
-        {/* User Permission Management (Super Admin Only) */}
-        {isSuperAdmin && (
-          <section className="users-section">
-            <div className="section-header">
-              <h2>User Permission Management</h2>
-              <p className="subtitle">Quick access to manage user roles and permissions</p>
-            </div>
-
-            {usersError && (
-              <div className="alert alert-error">
-                {usersError}
-                <button onClick={() => setUsersError(null)} className="alert-close">×</button>
-              </div>
-            )}
-
-            {usersLoading ? (
-              <div className="loading">Loading users...</div>
-            ) : (
-              <div className="table-container">
-                <table className="users-table">
-                  <thead>
-                    <tr>
-                      <th>Username</th>
-                      <th>Email</th>
-                      <th>Provider</th>
-                      <th>Status</th>
-                      <th>Roles</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((userItem) => (
-                      <tr key={userItem.id}>
-                        <td>
-                          {userItem.username}
-                          {userItem.isSuperAdmin && <span className="badge">Super Admin</span>}
-                        </td>
-                        <td>{userItem.email}</td>
-                        <td>{userItem.provider}</td>
-                        <td>
-                          <span className={`status ${userItem.isActive ? 'active' : 'inactive'}`}>
-                            {userItem.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          {userItem.roles.length > 0 ? (
-                            <ul className="role-list">
-                              {userItem.roles.map((role, idx) => (
-                                <li key={idx}>
-                                  {role.applicationName}: {role.roleName}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <span className="no-roles">No roles</span>
-                          )}
-                        </td>
-                        <td className="actions">
-                          {!userItem.isSuperAdmin && (
-                            <>
-                              <button
-                                onClick={() => handleEditRoles(userItem)}
-                                className="btn btn-small"
-                              >
-                                Edit Roles
-                              </button>
-                              <button
-                                onClick={() => handleToggleActive(userItem)}
-                                className={`btn btn-small ${userItem.isActive ? 'btn-danger' : 'btn-success'}`}
-                              >
-                                {userItem.isActive ? 'Disable' : 'Enable'}
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {showRoleModal && selectedUser && (
-              <div className="modal-overlay" onClick={() => setShowRoleModal(false)}>
-                <div className="modal" onClick={(e) => e.stopPropagation()}>
-                  <h2>Edit Roles for {selectedUser.username}</h2>
-
-                  <RoleSelector
-                    applications={allApplications}
-                    isRoleSelected={(roleId) => selectedUser.roles.some(r => r.roleId === roleId)}
-                    onRoleToggle={(roleId, checked) => handleRoleChange(roleId, checked)}
-                    label="Application Roles"
-                  />
-
-                  <button
-                    onClick={() => setShowRoleModal(false)}
-                    className="btn btn-primary"
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
         {/* Applications Section */}
         <section className="apps-section">
           <h2>Your Applications</h2>
@@ -389,29 +246,6 @@ export function DashboardPage() {
           ) : (
             <p>No applications available. Contact an admin to get access.</p>
           )}
-        </section>
-
-        {/* Quick Links */}
-        <section className="quick-links">
-          <h2>Quick Links</h2>
-          <div className="links-grid">
-            <Link to="/sessions" className="quick-link">
-              Dedicated Sessions Page
-            </Link>
-            {isSuperAdmin && (
-              <>
-                <Link to="/admin/users" className="quick-link">
-                  User Management (Detailed)
-                </Link>
-                <Link to="/admin/invitations" className="quick-link">
-                  Invitations
-                </Link>
-                <Link to="/admin/applications" className="quick-link">
-                  Applications Management
-                </Link>
-              </>
-            )}
-          </div>
         </section>
       </div>
 
@@ -675,6 +509,120 @@ export function DashboardPage() {
 
         .dashboard .modal h2 {
           margin-top: 0;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1.25rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .stat-card {
+          background: #fff;
+          border-radius: 12px;
+          padding: 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          border: 1px solid #f0f0f0;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .stat-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: linear-gradient(90deg, var(--stat-color, #ffa400) 0%, var(--stat-color-light, #ffb84d) 100%);
+        }
+
+        .stat-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-card-primary {
+          --stat-color: #ffa400;
+          --stat-color-light: #ffb84d;
+        }
+
+        .stat-card-warning {
+          --stat-color: #ffc107;
+          --stat-color-light: #ffcd57;
+        }
+
+        .stat-card-success {
+          --stat-color: #28a745;
+          --stat-color-light: #5cb85c;
+        }
+
+        .stat-card-info {
+          --stat-color: #17a2b8;
+          --stat-color-light: #5bc0de;
+        }
+
+        .stat-icon {
+          font-size: 2.5rem;
+          width: 60px;
+          height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--stat-color, #ffa400);
+          border-radius: 12px;
+          flex-shrink: 0;
+          opacity: 0.9;
+        }
+
+        .stat-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .stat-value {
+          font-size: 2rem;
+          font-weight: 700;
+          color: var(--stat-color, #ffa400);
+          line-height: 1;
+          margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+          font-size: 0.85rem;
+          color: #666;
+          font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+          .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+          }
+
+          .stat-card {
+            padding: 1.25rem;
+          }
+
+          .stat-icon {
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+          }
+
+          .stat-value {
+            font-size: 1.5rem;
+          }
+
+          .stat-label {
+            font-size: 0.8rem;
+          }
         }
       `}</style>
     </AdminLayout>
