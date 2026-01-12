@@ -100,3 +100,4 @@ This tool has no auth built in. Put it behind OAuth2-proxy or something similar.
 ## Related
 
 Part of [josnelihurt.me infra](https://github.com/josnelihurt/infra) - my home lab setup.
+# CICD test
