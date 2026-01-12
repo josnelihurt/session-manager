@@ -133,6 +133,31 @@ export function DashboardPage() {
           </div>
         </div>
 
+        {/* Applications Section */}
+        <section className="apps-section">
+          <h2>Your Applications</h2>
+          {loading ? (
+            <p>Loading...</p>
+          ) : applications.length > 0 ? (
+            <div className="apps-grid">
+              {applications.map((app) => (
+                <a
+                  key={app.id}
+                  href={`https://${app.url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="app-link"
+                >
+                  <h3>{app.name}</h3>
+                  <p>{app.url}</p>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p>No applications available. Contact an admin to get access.</p>
+          )}
+        </section>
+
         {/* OAuth2 Sessions Management */}
         <section className="sessions-section">
           <div className="section-header">
@@ -220,31 +245,6 @@ export function DashboardPage() {
                 </tbody>
               </table>
             </div>
-          )}
-        </section>
-
-        {/* Applications Section */}
-        <section className="apps-section">
-          <h2>Your Applications</h2>
-          {loading ? (
-            <p>Loading...</p>
-          ) : applications.length > 0 ? (
-            <div className="apps-grid">
-              {applications.map((app) => (
-                <a
-                  key={app.id}
-                  href={`https://${app.url}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="app-link"
-                >
-                  <h3>{app.name}</h3>
-                  <p>{app.url}</p>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <p>No applications available. Contact an admin to get access.</p>
           )}
         </section>
       </div>
