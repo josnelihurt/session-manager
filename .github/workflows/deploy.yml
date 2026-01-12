@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: read
+
 env:
   REGISTRY: ghcr.io
   IMAGE_API: ghcr.io/${{ github.repository }}-api
