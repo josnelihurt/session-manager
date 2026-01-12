@@ -115,3 +115,4 @@ jobs:
           curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/ || echo "Frontend check failed"
           curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/api/health || echo "API check failed"
           echo "Deployment verification complete"
+# CICD deployment test
