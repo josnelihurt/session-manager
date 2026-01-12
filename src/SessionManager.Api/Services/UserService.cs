@@ -117,6 +117,7 @@ public class UserService : IUserService
     {
         var user = await _dbContext.Users
             .Include(u => u.UserRoles)
+            .Include(u => u.Sessions)
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
@@ -132,8 +133,19 @@ public class UserService : IUserService
             return false;
         }
 
+        // Remove all user sessions first (to avoid foreign key constraint errors)
+        if (user.Sessions.Any())
+        {
+            _dbContext.Sessions.RemoveRange(user.Sessions);
+            _logger.LogInformation("Removed {Count} sessions for user {UserId}", user.Sessions.Count, userId);
+        }
+
         // Remove all user roles
-        _dbContext.UserRoles.RemoveRange(user.UserRoles);
+        if (user.UserRoles.Any())
+        {
+            _dbContext.UserRoles.RemoveRange(user.UserRoles);
+            _logger.LogInformation("Removed {Count} roles for user {UserId}", user.UserRoles.Count, userId);
+        }
 
         // Remove the user
         _dbContext.Users.Remove(user);
