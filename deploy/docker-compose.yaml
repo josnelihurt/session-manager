@@ -1,7 +1,7 @@
 services:
   # Session Manager API
   session-manager-api:
-    image: ghcr.io/josnelihurt/session-manager:latest
+    image: ghcr.io/josnelihurt/session-manager-api:latest
     container_name: session-manager-api
     restart: unless-stopped
     security_opt:
