@@ -1,7 +1,9 @@
-name: Deploy
+name: CI/CD - Deploy
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -11,15 +13,19 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_API: ghcr.io/josnelihurt/session-manager-api
+  IMAGE_NAME: ghcr.io/josnelihurt/session-manager
   IMAGE_FRONTEND: ghcr.io/josnelihurt/session-manager-frontend
   SSH_HOST: vultur.josnelihurt.me
   SSH_USER: jrb
 
 jobs:
-  build-and-deploy:
+  # Build API - runs in parallel with frontend
+  build-api:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
 
     steps:
       - name: Checkout code
@@ -35,41 +41,84 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build API image
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=
+            type=raw,value=${{ github.run_number }}
+
       - name: Build and push API image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ env.IMAGE_API }}:latest
-            ${{ env.IMAGE_API }}:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/josnelihurt/session-manager
-            org.opencontainers.image.revision=${{ github.sha }}
+          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Build Frontend image
+  # Build Frontend - runs in parallel with API
+  build-frontend:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_FRONTEND }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=
+            type=raw,value=${{ github.run_number }}
+
       - name: Build and push Frontend image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
           platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ env.IMAGE_FRONTEND }}:latest
-            ${{ env.IMAGE_FRONTEND }}:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/josnelihurt/session-manager
-            org.opencontainers.image.revision=${{ github.sha }}
+          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Deploy to server
+  # Deploy - only runs on push to main after both builds succeed
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-api, build-frontend]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -82,85 +131,69 @@ jobs:
           ssh ${{ env.SSH_USER }}@${{ env.SSH_HOST }} << 'ENDSSH'
             set -e
 
+            echo "=== Starting deployment ==="
+
+            # Create deploy directory if not exists
+            mkdir -p ~/infra/services/compose
+
+            # Copy docker-compose file
+            cat > ~/infra/services/compose/session-manager.yaml << 'COMPOSE_EOF'
+          $(cat deploy/docker-compose.yaml)
+          COMPOSE_EOF
+
             # Stop existing containers
             echo "Stopping existing containers..."
-            docker stop session-manager-api session-manager-frontend 2>/dev/null || true
-            docker rm session-manager-api session-manager-frontend 2>/dev/null || true
+            cd ~/infra/services/compose
+            docker compose -f session-manager.yaml rm -f session-manager-api session-manager-frontend 2>/dev/null || true
 
             # Pull new images
             echo "Pulling new images..."
-            docker pull ${{ env.IMAGE_API }}:latest
+            docker pull ${{ env.IMAGE_NAME }}:latest
             docker pull ${{ env.IMAGE_FRONTEND }}:latest
 
-            # Start API container
-            echo "Starting API container..."
-            docker run -d \
-              --name session-manager-api \
-              --restart unless-stopped \
-              --network session-manager-internal \
-              --network database-internal \
-              --network public-wan \
-              --env-file /opt/docker_data/session-manager/.env \
-              -l traefik.enable=true \
-              -l traefik.docker.network=public-wan \
-              -l "traefik.http.routers.session-manager-api.entrypoints=https" \
-              -l "traefik.http.routers.session-manager-api.rule=Host(\`session-manager.lab.josnelihurt.me\`) && PathPrefix(\`/api\`)" \
-              -l "traefik.http.routers.session-manager-api.priority=100" \
-              -l "traefik.http.routers.session-manager-api.tls=true" \
-              -l "traefik.http.routers.session-manager-api.tls.certresolver=cloudflare" \
-              -l "traefik.http.routers.session-manager-api.service=session-manager-api" \
-              -l "traefik.http.services.session-manager-api.loadbalancer.server.port=8080" \
-              -l "traefik.http.routers.session-manager-auth.entrypoints=https" \
-              -l "traefik.http.routers.session-manager-auth.rule=Host(\`session-manager.lab.josnelihurt.me\`) && PathPrefix(\`/auth\`)" \
-              -l "traefik.http.routers.session-manager-auth.priority=100" \
-              -l "traefik.http.routers.session-manager-auth.tls=true" \
-              -l "traefik.http.routers.session-manager-auth.tls.certresolver=cloudflare" \
-              -l "traefik.http.routers.session-manager-auth.service=session-manager-api" \
-              --log-driver json-file \
-              --log-opt max-size=10m \
-              --log-opt max-file=3 \
-              ${{ env.IMAGE_API }}:latest
+            # Start containers
+            echo "Starting containers..."
+            docker compose -f session-manager.yaml up -d
 
-            # Start Frontend container
-            echo "Starting Frontend container..."
-            docker run -d \
-              --name session-manager-frontend \
-              --restart unless-stopped \
-              --network session-manager-internal \
-              --network public-wan \
-              -l traefik.enable=true \
-              -l traefik.docker.network=public-wan \
-              -l "traefik.http.routers.session-manager.entrypoints=http" \
-              -l "traefik.http.routers.session-manager.rule=Host(\`session-manager.lab.josnelihurt.me\`)" \
-              -l "traefik.http.routers.session-manager.middlewares=session-manager-https-redirect" \
-              -l "traefik.http.routers.session-manager-secure.entrypoints=https" \
-              -l "traefik.http.routers.session-manager-secure.rule=Host(\`session-manager.lab.josnelihurt.me\`)" \
-              -l "traefik.http.routers.session-manager-secure.tls=true" \
-              -l "traefik.http.routers.session-manager-secure.tls.certresolver=cloudflare" \
-              -l "traefik.http.routers.session-manager-secure.service=session-manager-frontend" \
-              -l "traefik.http.services.session-manager-frontend.loadbalancer.server.port=80" \
-              -l "traefik.http.middlewares.session-manager-https-redirect.redirectscheme.scheme=https" \
-              -l "traefik.http.middlewares.session-manager-https-redirect.redirectscheme.permanent=true" \
-              --log-driver json-file \
-              --log-opt max-size=10m \
-              --log-opt max-file=3 \
-              ${{ env.IMAGE_FRONTEND }}:latest
+            # Wait for containers to be healthy
+            echo "Waiting for containers to be ready..."
+            sleep 10
 
             # Verify containers are running
             echo "Verifying containers..."
-            sleep 5
             docker ps | grep session-manager
 
-            # Clean up old images
-            echo "Cleaning up old images..."
-            docker image prune -af --filter "until=24h"
+            # Show logs
+            echo "=== API Logs ==="
+            docker logs --tail 20 session-manager-api
 
-            echo "Deployment completed successfully!"
+            echo "=== Frontend Logs ==="
+            docker logs --tail 10 session-manager-frontend
+
+            echo "=== Deployment completed successfully! ==="
           ENDSSH
 
       - name: Verify deployment
         run: |
           echo "Verifying deployment..."
-          curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/ || echo "Frontend check failed"
-          curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/api/health || echo "API check failed"
-          echo "Deployment verification complete"
+          FRONTEND_STATUS=$(curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/ || echo "000")
+          API_STATUS=$(curl -f -s -o /dev/null -w "%{http_code}" https://session-manager.lab.josnelihurt.me/api/health || echo "000")
+
+          echo "Frontend status: $FRONTEND_STATUS"
+          echo "API status: $API_STATUS"
+
+          if [ "$FRONTEND_STATUS" = "200" ] || [ "$FRONTEND_STATUS" = "304" ]; then
+            echo "✓ Frontend is accessible"
+          else
+            echo "✗ Frontend check failed"
+            exit 1
+          fi
+
+          if [ "$API_STATUS" = "200" ] || [ "$API_STATUS" = "404" ]; then
+            echo "✓ API is accessible (404 is expected for /api/health if endpoint doesn't exist)"
+          else
+            echo "✗ API check failed"
+            exit 1
+          fi
+
+          echo "=== Deployment verification complete ==="
