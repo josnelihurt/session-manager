@@ -28,7 +28,7 @@ public class OtpService : IOtpService
     {
         // Invalidate any existing unused OTPs for this email
         var existingOtps = await _dbContext.OtpAttempts
-            .Where(o => o.Email == email.ToLowerInvariant() && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
+            .Where(o => o.Email == email.ToLowerInvariant() && o.UsedAt == null && o.ExpiresAt > DateTime.UtcNow)
             .ToListAsync();
 
         foreach (var otp in existingOtps)
@@ -65,7 +65,7 @@ public class OtpService : IOtpService
         var otp = await _dbContext.OtpAttempts
             .Where(o => o.Email == email.ToLowerInvariant()
                       && o.Code == code
-                      && !o.IsUsed
+                      && o.UsedAt == null
                       && o.ExpiresAt > DateTime.UtcNow)
             .OrderByDescending(o => o.CreatedAt)
             .FirstOrDefaultAsync();
@@ -78,7 +78,7 @@ public class OtpService : IOtpService
         var otp = await _dbContext.OtpAttempts
             .Where(o => o.Email == email.ToLowerInvariant()
                       && o.Code == code
-                      && !o.IsUsed
+                      && o.UsedAt == null
                       && o.ExpiresAt > DateTime.UtcNow)
             .OrderByDescending(o => o.CreatedAt)
             .FirstOrDefaultAsync();
