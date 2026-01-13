@@ -183,6 +183,7 @@ public static class AuthEndpoints
             [FromQuery] string state,
             HttpRequest httpRequest,
             IGoogleOAuthService googleService,
+            IInvitationService invitationService,
             ISessionService sessionService,
             IOptions<AuthOptions> authOptions,
             SessionManagerDbContext dbContext,
@@ -190,6 +191,20 @@ public static class AuthEndpoints
         {
             var ipAddress = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var userAgent = httpRequest.Headers.UserAgent.ToString();
+
+            // Extract invitation token from state if present
+            string? invitationToken = null;
+            string originalState = state;
+            if (!string.IsNullOrEmpty(state) && state.Contains('|'))
+            {
+                var parts = state.Split('|');
+                if (parts.Length == 2)
+                {
+                    originalState = parts[0];
+                    invitationToken = parts[1];
+                    logger.LogInformation("Extracted invitation token from state");
+                }
+            }
 
             // Exchange code for tokens
             var tokens = await googleService.ExchangeCodeAsync(code);
@@ -214,6 +229,28 @@ public static class AuthEndpoints
             // For Google OAuth, we create user if not exists
             if (user == null)
             {
+                // If invitation token is provided, validate it first
+                Entities.Invitation? invitation = null;
+                if (!string.IsNullOrEmpty(invitationToken))
+                {
+                    try
+                    {
+                        invitation = await invitationService.ValidateTokenAsync(invitationToken);
+                        if (invitation == null)
+                        {
+                            return Results.Redirect($"/login?error={Uri.EscapeDataString("Invalid or expired invitation token")}");
+                        }
+                        logger.LogInformation("Validated invitation for {Email} with {Count} pre-assigned roles",
+                            googleUser.Email, invitation.PreAssignedRoles?.Length ?? 0);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to validate invitation token");
+                        return Results.Redirect($"/login?error={Uri.EscapeDataString("Invalid invitation token")}");
+                    }
+                }
+
+                // Create user
                 user = new User
                 {
                     Username = googleUser.Email.Split('@')[0],
@@ -226,6 +263,34 @@ public static class AuthEndpoints
                 dbContext.Users.Add(user);
                 await dbContext.SaveChangesAsync();
                 logger.LogInformation("Created new user {Email} via Google OAuth", user.Email);
+
+                // Mark invitation as used if present
+                if (invitation != null)
+                {
+                    await invitationService.MarkAsUsedAsync(invitation.Id, user.Id);
+                    logger.LogInformation("Invitation {Token} marked as used", invitationToken.Substring(0, 8) + "...");
+                }
+
+                // Assign pre-configured roles from invitation (if any)
+                if (invitation != null && invitation.PreAssignedRoles != null && invitation.PreAssignedRoles.Length > 0)
+                {
+                    foreach (var roleIdStr in invitation.PreAssignedRoles)
+                    {
+                        if (Guid.TryParse(roleIdStr, out var roleId))
+                        {
+                            var userRole = new UserRole
+                            {
+                                UserId = user.Id,
+                                RoleId = roleId,
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            dbContext.UserRoles.Add(userRole);
+                        }
+                    }
+                    await dbContext.SaveChangesAsync();
+                    logger.LogInformation("Assigned {Count} pre-configured roles to user {Username}",
+                        invitation.PreAssignedRoles.Length, user.Username);
+                }
             }
 
             if (!user.IsActive)
