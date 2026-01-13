@@ -230,18 +230,18 @@ public static class AuthEndpoints
             if (user == null)
             {
                 // If invitation token is provided, validate it first
-                Entities.Invitation? invitation = null;
+                Models.Invitations.InvitationDto? invitationDto = null;
                 if (!string.IsNullOrEmpty(invitationToken))
                 {
                     try
                     {
-                        invitation = await invitationService.ValidateTokenAsync(invitationToken);
-                        if (invitation == null)
+                        invitationDto = await invitationService.GetByTokenAsync(invitationToken);
+                        if (invitationDto == null || invitationDto.IsUsed)
                         {
                             return Results.Redirect($"/login?error={Uri.EscapeDataString("Invalid or expired invitation token")}");
                         }
                         logger.LogInformation("Validated invitation for {Email} with {Count} pre-assigned roles",
-                            googleUser.Email, invitation.PreAssignedRoles?.Length ?? 0);
+                            googleUser.Email, invitationDto.PreAssignedRoles?.Length ?? 0);
                     }
                     catch (Exception ex)
                     {
@@ -265,16 +265,16 @@ public static class AuthEndpoints
                 logger.LogInformation("Created new user {Email} via Google OAuth", user.Email);
 
                 // Mark invitation as used if present
-                if (invitation != null)
+                if (invitationDto != null)
                 {
-                    await invitationService.MarkAsUsedAsync(invitation.Id, user.Id);
+                    await invitationService.MarkAsUsedAsync(invitationDto.Id, user.Id);
                     logger.LogInformation("Invitation {Token} marked as used", invitationToken.Substring(0, 8) + "...");
                 }
 
                 // Assign pre-configured roles from invitation (if any)
-                if (invitation != null && invitation.PreAssignedRoles != null && invitation.PreAssignedRoles.Length > 0)
+                if (invitationDto != null && invitationDto.PreAssignedRoles != null && invitationDto.PreAssignedRoles.Length > 0)
                 {
-                    foreach (var roleIdStr in invitation.PreAssignedRoles)
+                    foreach (var roleIdStr in invitationDto.PreAssignedRoles)
                     {
                         if (Guid.TryParse(roleIdStr, out var roleId))
                         {
@@ -289,7 +289,7 @@ public static class AuthEndpoints
                     }
                     await dbContext.SaveChangesAsync();
                     logger.LogInformation("Assigned {Count} pre-configured roles to user {Username}",
-                        invitation.PreAssignedRoles.Length, user.Username);
+                        invitationDto.PreAssignedRoles.Length, user.Username);
                 }
             }
 
