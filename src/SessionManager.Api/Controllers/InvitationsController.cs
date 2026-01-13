@@ -179,4 +179,61 @@ public class InvitationsController : ControllerBase
 
         return Ok(invitation);
     }
+
+    /// <summary>
+    /// Resend invitation email
+    /// </summary>
+    [HttpPost("{id}/resend-email")]
+    public async Task<ActionResult> ResendEmail(Guid id)
+    {
+        var sessionKey = Request.Cookies[_authOptions.CookieName];
+        if (string.IsNullOrEmpty(sessionKey))
+        {
+            return Unauthorized(new { error = "Not authenticated" });
+        }
+
+        var user = await _authService.GetCurrentUserAsync(sessionKey);
+        if (user == null)
+        {
+            return Unauthorized(new { error = "Invalid session" });
+        }
+
+        var invitation = await _invitationService.GetByIdAsync(id);
+        if (invitation == null)
+        {
+            return NotFound(new { error = "Invitation not found" });
+        }
+
+        try
+        {
+            // Convert string roles to Guid array for getting application URLs
+            var roleIds = invitation.PreAssignedRoles
+                .Select(r => Guid.TryParse(r, out var guid) ? guid : (Guid?)null)
+                .Where(g => g.HasValue)
+                .Select(g => g.Value)
+                .ToArray();
+
+            var applicationUrls = await GetApplicationUrlsForRoles(roleIds);
+
+            var emailSent = await _emailService.SendInvitationEmailAsync(
+                invitation.Email,
+                invitation,
+                applicationUrls
+            );
+
+            if (!emailSent)
+            {
+                _logger.LogWarning("Failed to resend invitation email to {Email}", invitation.Email);
+                return BadRequest(new { error = "Failed to send email" });
+            }
+
+            _logger.LogInformation("Resent invitation email to {Email}", invitation.Email);
+            return Ok(new { message = "Email sent successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resending invitation email to {Email}", invitation.Email);
+            return BadRequest(new { error = "Failed to send email" });
+        }
+    }
 }

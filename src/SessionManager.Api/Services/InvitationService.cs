@@ -105,7 +105,7 @@ public class InvitationService : IInvitationService
         return true;
     }
 
-    private async Task<InvitationDto?> GetByIdAsync(Guid id)
+    public async Task<InvitationDto?> GetByIdAsync(Guid id)
     {
         var invitation = await _dbContext.Invitations
             .Include(i => i.CreatedBy)

@@ -154,3 +154,8 @@ export const validateInvitationToken = async (token) => {
   const response = await apiClient.get(`/invitations/validate/${token}`)
   return response.data
 }
+
+export const resendInvitationEmail = async (id) => {
+  const response = await apiClient.post(`/invitations/${id}/resend-email`)
+  return response.data
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AdminLayout } from '../../components/Layout/AdminLayout'
 import { RoleSelector } from '../../components/RoleSelector'
-import { getAllApplications, createInvitation, deleteInvitation } from '../../api'
+import { getAllApplications, createInvitation, deleteInvitation, resendInvitationEmail } from '../../api'
 
 export function InvitationsPage() {
   const [invitations, setInvitations] = useState([])
@@ -14,7 +14,7 @@ export function InvitationsPage() {
   const [email, setEmail] = useState('')
   const [provider, setProvider] = useState('local')
   const [selectedRoles, setSelectedRoles] = useState([])
-  const [sendEmail, setSendEmail] = useState(false)
+  const [sendEmail, setSendEmail] = useState(true)
   const [creating, setCreating] = useState(false)
   const [createdInvite, setCreatedInvite] = useState(null)
   const [deleting, setDeleting] = useState(false)
@@ -65,6 +65,16 @@ export function InvitationsPage() {
     }
   }
 
+  const handleResendEmail = async (id) => {
+    try {
+      await resendInvitationEmail(id)
+      setError('')
+      alert('Email resent successfully!')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to resend email')
+    }
+  }
+
   const handleSelectInvitation = (id) => {
     const newSelected = new Set(selectedInvitations)
     if (newSelected.has(id)) {
@@ -112,7 +122,7 @@ export function InvitationsPage() {
     setEmail('')
     setProvider('local')
     setSelectedRoles([])
-    setSendEmail(false)
+    setSendEmail(true)
     setCreatedInvite(null)
     setShowCreateModal(false)
   }
@@ -214,6 +224,12 @@ export function InvitationsPage() {
                         className="btn btn-small"
                       >
                         Copy Link
+                      </button>
+                      <button
+                        onClick={() => handleResendEmail(inv.id)}
+                        className="btn btn-small"
+                      >
+                        Resend Email
                       </button>
                       <button
                         onClick={() => handleDelete(inv.id)}
