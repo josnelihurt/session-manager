@@ -98,6 +98,26 @@
   color: #dc3545;
 }
 
+.user-info {
+  font-weight: 500;
+  color: var(--color-text-dark, #333);
+}
+
+.no-user {
+  color: #dc3545;
+  font-style: italic;
+}
+
+.user-email {
+  font-size: 0.9rem;
+  color: var(--color-text, #939393);
+}
+
+.no-email {
+  color: #999;
+  font-style: italic;
+}
+
 .alert {
   display: flex;
   justify-content: space-between;

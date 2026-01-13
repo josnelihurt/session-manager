@@ -134,6 +134,8 @@ export function SessionsPage() {
                 <tr>
                   <th>Session ID</th>
                   <th>Cookie Prefix</th>
+                  <th>User</th>
+                  <th>Email</th>
                   <th>Expires At</th>
                   <th>Remaining</th>
                   <th>Actions</th>
@@ -146,6 +148,16 @@ export function SessionsPage() {
                       <code>{session.sessionId}</code>
                     </td>
                     <td>{session.cookiePrefix}</td>
+                    <td className="user-info">
+                      {session.username || (
+                        <span className="no-user">Unknown/Dangling</span>
+                      )}
+                    </td>
+                    <td className="user-email">
+                      {session.email || (
+                        <span className="no-email">N/A</span>
+                      )}
+                    </td>
                     <td className="expires-at">
                       {session.expiresAt
                         ? new Date(session.expiresAt).toLocaleString()

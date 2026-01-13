@@ -5,5 +5,8 @@ public record SessionInfo(
     string CookiePrefix,
     long TtlMilliseconds,
     DateTime? ExpiresAt,
-    string FullKey
+    string FullKey,
+    Guid? UserId,
+    string? Username,
+    string? Email
 );

@@ -8,13 +8,16 @@ namespace SessionManager.Api.Services;
 public class UserService : IUserService
 {
     private readonly SessionManagerDbContext _dbContext;
+    private readonly ISessionService _sessionService;
     private readonly ILogger<UserService> _logger;
 
     public UserService(
         SessionManagerDbContext dbContext,
+        ISessionService sessionService,
         ILogger<UserService> logger)
     {
         _dbContext = dbContext;
+        _sessionService = sessionService;
         _logger = logger;
     }
 
@@ -131,6 +134,17 @@ public class UserService : IUserService
         {
             _logger.LogWarning("Attempted to delete super admin user {UserId}", userId);
             return false;
+        }
+
+        // Remove all user sessions from Redis first (to avoid dangling sessions)
+        try
+        {
+            var redisSessionCount = await _sessionService.DeleteUserSessionsAsync(userId);
+            _logger.LogInformation("Removed {Count} Redis sessions for user {UserId}", redisSessionCount, userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to delete Redis sessions for user {UserId}", userId);
         }
 
         // Remove all user sessions first (to avoid foreign key constraint errors)

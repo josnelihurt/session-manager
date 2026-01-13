@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using SessionManager.Api.Configuration;
 using SessionManager.Api.Models;
+using SessionManager.Api.Models.Auth;
 using SessionManager.Api.Services;
 
 namespace SessionManager.Api.Controllers;
@@ -9,18 +12,25 @@ namespace SessionManager.Api.Controllers;
 public class SessionsController : ControllerBase
 {
     private readonly ISessionService _sessionService;
+    private readonly IAuthService _authService;
+    private readonly AuthOptions _authOptions;
     private readonly ILogger<SessionsController> _logger;
 
     public SessionsController(
         ISessionService sessionService,
+        IAuthService authService,
+        IOptions<AuthOptions> authOptions,
         ILogger<SessionsController> logger)
     {
         _sessionService = sessionService;
+        _authService = authService;
+        _authOptions = authOptions.Value;
         _logger = logger;
     }
 
     /// <summary>
     /// Get all OAuth2 proxy sessions from Redis
+    /// Non-super-admin users only see their own sessions
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(SessionsResponse), StatusCodes.Status200OK)]
@@ -29,17 +39,49 @@ public class SessionsController : ControllerBase
     {
         try
         {
-            var sessions = await _sessionService.GetAllSessionsAsync();
+            // Get current user from session
+            var sessionKey = Request.Cookies[_authOptions.CookieName];
+            UserInfo? currentUser = null;
+
+            if (!string.IsNullOrEmpty(sessionKey))
+            {
+                currentUser = await _authService.GetCurrentUserAsync(sessionKey);
+            }
+
+            // Get all sessions
+            var allSessions = await _sessionService.GetAllSessionsAsync();
+
+            // Filter sessions: non-super-admins only see their own sessions
+            IEnumerable<SessionInfo> sessions;
+            if (currentUser != null && currentUser.IsSuperAdmin)
+            {
+                // Super admin sees all sessions
+                sessions = allSessions;
+            }
+            else if (currentUser != null)
+            {
+                // Regular user sees only their own sessions
+                sessions = allSessions.Where(s => s.UserId == currentUser.Id);
+            }
+            else
+            {
+                // Not authenticated - return empty list
+                sessions = Enumerable.Empty<SessionInfo>();
+            }
+
             var sessionDtos = sessions.Select(s => new SessionDto(
                 s.SessionId,
                 s.CookiePrefix,
                 s.TtlMilliseconds,
                 s.ExpiresAt?.ToString("o"),
                 FormatRemainingTime(s.TtlMilliseconds),
-                s.FullKey
+                s.FullKey,
+                s.UserId?.ToString("N"),
+                s.Username,
+                s.Email
             ));
 
-            return Ok(new SessionsResponse(true, sessionDtos, sessions.Count));
+            return Ok(new SessionsResponse(true, sessionDtos, sessions.Count()));
         }
         catch (Exception ex)
         {

@@ -14,4 +14,8 @@ public interface ISessionService
     Task<string> CreateSessionAsync(Guid userId, string username, string email, bool isSuperAdmin, string ipAddress, string userAgent);
     Task<SessionData?> GetSessionAsync(string sessionKey);
     Task<bool> InvalidateSessionAsync(string sessionKey);
+
+    // User session management methods
+    Task<List<SessionInfo>> GetSessionsByUserAsync(Guid userId);
+    Task<int> DeleteUserSessionsAsync(Guid userId);
 }

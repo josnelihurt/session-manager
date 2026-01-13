@@ -29,7 +29,10 @@ public record SessionDto(
     long Ttl,
     string? ExpiresAt,
     string Remaining,
-    string FullKey
+    string FullKey,
+    string? UserId,
+    string? Username,
+    string? Email
 );
 
 public record DeleteResponse(bool Success, string Message);

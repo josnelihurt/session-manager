@@ -42,12 +42,39 @@ public class RedisSessionService : ISessionService
             var (sessionId, cookiePrefix) = ParseSessionKey(keyStr);
             var expiresAt = ttlMs > 0 ? DateTime.UtcNow.AddMilliseconds(ttlMs) : (DateTime?)null;
 
+            // Try to get user data from session value
+            Guid? userId = null;
+            string? username = null;
+            string? email = null;
+
+            try
+            {
+                var json = await db.StringGetAsync(key);
+                if (!json.IsNullOrEmpty)
+                {
+                    var sessionData = JsonSerializer.Deserialize(json!, AppJsonContext.Default.SessionData);
+                    if (sessionData != null)
+                    {
+                        userId = sessionData.UserId;
+                        username = sessionData.Username;
+                        email = sessionData.Email;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to deserialize session data for key {Key}", keyStr);
+            }
+
             sessions.Add(new SessionInfo(
                 sessionId,
                 cookiePrefix,
                 ttlMs,
                 expiresAt,
-                keyStr
+                keyStr,
+                userId,
+                username,
+                email
             ));
         }
 
@@ -127,6 +154,47 @@ public class RedisSessionService : ISessionService
         }
 
         return deleted;
+    }
+
+    public async Task<List<SessionInfo>> GetSessionsByUserAsync(Guid userId)
+    {
+        var allSessions = await GetAllSessionsAsync();
+        return allSessions.Where(s => s.UserId == userId).ToList();
+    }
+
+    public async Task<int> DeleteUserSessionsAsync(Guid userId)
+    {
+        var db = _redis.GetDatabase();
+        var server = _redis.GetServer(_redis.GetEndPoints().First());
+        var count = 0;
+
+        var sessionKeys = server.Keys(pattern: _options.SessionKeyPattern, pageSize: _options.ScanPageSize).ToList();
+
+        foreach (var key in sessionKeys)
+        {
+            try
+            {
+                var json = await db.StringGetAsync(key);
+                if (!json.IsNullOrEmpty)
+                {
+                    var sessionData = JsonSerializer.Deserialize(json!, AppJsonContext.Default.SessionData);
+                    if (sessionData != null && sessionData.UserId == userId)
+                    {
+                        if (await db.KeyDeleteAsync(key))
+                        {
+                            count++;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to check/delete session {Key}", key);
+            }
+        }
+
+        _logger.LogInformation("Deleted {Count} sessions for user {UserId}", count, userId);
+        return count;
     }
 
     private static (string SessionId, string CookiePrefix) ParseSessionKey(string key)
