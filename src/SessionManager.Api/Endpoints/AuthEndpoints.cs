@@ -22,25 +22,83 @@ public static class AuthEndpoints
             return Results.Ok(providers);
         });
 
-        // POST /api/auth/login - Local login
+        // POST /api/auth/login - Local login with OTP support
         app.MapPost("/api/auth/login", async (
-            [FromBody] LoginRequest request,
+            [FromBody] LoginWithOtpRequest request,
             HttpRequest httpRequest,
             IAuthService authService,
-            IOptions<AuthOptions> authOptions) =>
+            IOtpService otpService,
+            IOptions<AuthOptions> authOptions,
+            ILogger<Program> logger) =>
         {
             var ipAddress = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var userAgent = httpRequest.Headers.UserAgent.ToString();
 
-            var result = await authService.LoginAsync(request, ipAddress, userAgent);
-
-            if (!result.Success)
+            // For local users, validate credentials first
+            var user = await authService.ValidateCredentialsAsync(request.Username, request.Password);
+            if (user == null)
             {
-                return Results.Text(result.Error ?? "Unauthorized", statusCode: 401);
+                return Results.Text("Invalid credentials", statusCode: 401);
             }
 
-            // Set session cookie
-            httpRequest.HttpContext.Response.Cookies.Append(authOptions.Value.CookieName, result.SessionKey!, new CookieOptions
+            // Local users require OTP
+            if (user.Provider == "local")
+            {
+                // If OTP code is provided, verify it
+                if (!string.IsNullOrEmpty(request.OtpCode))
+                {
+                    var otpValid = await otpService.VerifyAndConsumeOtpAsync(user.Email, request.OtpCode);
+                    if (!otpValid)
+                    {
+                        return Results.Text("Invalid or expired verification code", statusCode: 401);
+                    }
+
+                    // OTP is valid, create session
+                    var result = await authService.CreateSessionForUserAsync(user.Id, ipAddress, userAgent);
+                    if (!result.Success)
+                    {
+                        return Results.Text(result.Error ?? "Failed to create session", statusCode: 401);
+                    }
+
+                    // Set session cookie
+                    httpRequest.HttpContext.Response.Cookies.Append(authOptions.Value.CookieName, result.SessionKey!, new CookieOptions
+                    {
+                        Domain = authOptions.Value.CookieDomain,
+                        Path = "/",
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Lax,
+                        MaxAge = TimeSpan.FromHours(authOptions.Value.SessionLifetimeHours)
+                    });
+
+                    logger.LogInformation("User {Username} logged in with OTP successfully", user.Username);
+                    return Results.Ok(new LoginSuccessResponse(result.User));
+                }
+                else
+                {
+                    // No OTP provided, generate and send OTP
+                    await otpService.GenerateOtpAsync(user.Email);
+                    logger.LogInformation("OTP generated for user {Username}", user.Username);
+
+                    // Return response indicating OTP is required
+                    return Results.Ok(new LoginOtpResponse(
+                        RequiresOtp: true,
+                        Message: "A verification code has been sent to your email",
+                        Email: user.Email,
+                        User: null
+                    ));
+                }
+            }
+
+            // For non-local users (should not reach here as Google users use OAuth flow)
+            // But if somehow they do, create session directly
+            var directResult = await authService.CreateSessionForUserAsync(user.Id, ipAddress, userAgent);
+            if (!directResult.Success)
+            {
+                return Results.Text(directResult.Error ?? "Failed to create session", statusCode: 401);
+            }
+
+            httpRequest.HttpContext.Response.Cookies.Append(authOptions.Value.CookieName, directResult.SessionKey!, new CookieOptions
             {
                 Domain = authOptions.Value.CookieDomain,
                 Path = "/",
@@ -50,7 +108,12 @@ public static class AuthEndpoints
                 MaxAge = TimeSpan.FromHours(authOptions.Value.SessionLifetimeHours)
             });
 
-            return Results.Ok(new LoginSuccessResponse(result.User));
+            return Results.Ok(new LoginOtpResponse(
+                RequiresOtp: false,
+                Message: null,
+                Email: null,
+                User: directResult.User
+            ));
         });
 
         // POST /api/auth/register - User registration with invitation token

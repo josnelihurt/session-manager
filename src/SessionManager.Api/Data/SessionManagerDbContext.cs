@@ -15,6 +15,7 @@ public class SessionManagerDbContext : DbContext
     public DbSet<Invitation> Invitations => Set<Invitation>();
     public DbSet<AuthProvider> AuthProviders => Set<AuthProvider>();
     public DbSet<Session> Sessions => Set<Session>();
+    public DbSet<OtpAttempt> OtpAttempts => Set<OtpAttempt>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -133,6 +134,20 @@ public class SessionManagerDbContext : DbContext
             entity.Property(e => e.RevokedAt).HasColumnName("revoked_at");
             entity.HasOne(e => e.User).WithMany(u => u.Sessions).HasForeignKey(e => e.UserId);
             entity.HasIndex(e => e.SessionKey).IsUnique();
+        });
+
+        // OtpAttempt
+        modelBuilder.Entity<OtpAttempt>(entity =>
+        {
+            entity.ToTable("otp_attempts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(255);
+            entity.Property(e => e.Code).HasColumnName("code").HasMaxLength(10);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.UsedAt).HasColumnName("used_at");
+            entity.HasIndex(e => new { e.Email, e.Code });
         });
     }
 }

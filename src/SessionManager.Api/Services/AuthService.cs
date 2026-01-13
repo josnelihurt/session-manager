@@ -73,6 +73,77 @@ public class AuthService : IAuthService
         );
     }
 
+    public async Task<UserInfo?> ValidateCredentialsAsync(string username, string password)
+    {
+        var user = await _dbContext.Users
+            .FirstOrDefaultAsync(u => u.Username == username && u.Provider == "local");
+
+        if (user == null || string.IsNullOrEmpty(user.PasswordHash))
+        {
+            _logger.LogWarning("Credential validation failed: user {Username} not found", username);
+            return null;
+        }
+
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("Credential validation failed: user {Username} is inactive", username);
+            return null;
+        }
+
+        if (!_passwordHasher.VerifyPassword(password, user.PasswordHash))
+        {
+            _logger.LogWarning("Credential validation failed: invalid password for {Username}", username);
+            return null;
+        }
+
+        _logger.LogInformation("Credentials validated for user {Username}", username);
+
+        return new UserInfo(
+            Id: user.Id,
+            Username: user.Username,
+            Email: user.Email,
+            IsSuperAdmin: user.IsSuperAdmin,
+            Provider: user.Provider
+        );
+    }
+
+    public async Task<LoginResponse> CreateSessionForUserAsync(Guid userId, string ipAddress, string userAgent)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null)
+        {
+            _logger.LogWarning("Session creation failed: user {UserId} not found", userId);
+            return new LoginResponse(Success: false, Error: "User not found");
+        }
+
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("Session creation failed: user {Username} is inactive", user.Username);
+            return new LoginResponse(Success: false, Error: "Account is disabled");
+        }
+
+        // Update last login
+        user.LastLoginAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
+
+        // Create session
+        var sessionKey = await _sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, ipAddress, userAgent);
+
+        _logger.LogInformation("Session created for user {Username}", user.Username);
+
+        return new LoginResponse(
+            Success: true,
+            SessionKey: sessionKey,
+            User: new UserInfo(
+                Id: user.Id,
+                Username: user.Username,
+                Email: user.Email,
+                IsSuperAdmin: user.IsSuperAdmin,
+                Provider: user.Provider
+            )
+        );
+    }
+
     public async Task<LoginResponse> RegisterAsync(RegisterRequest request, string ipAddress, string userAgent)
     {
         // Validate invitation token

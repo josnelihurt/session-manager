@@ -32,6 +32,11 @@ services:
       - Cors__FrontendUrl=${Cors__FrontendUrl}
       # Allowed Applications
       - AllowedApplications=${AllowedApplications}
+      # Email
+      - Email__From=${Email__From}
+      - Email__Password=${Email__Password}
+      - Email__SmtpHost=${Email__SmtpHost}
+      - Email__SmtpPort=${Email__SmtpPort}
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=public-wan"
