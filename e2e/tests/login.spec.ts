@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-const LOCAL_USERNAME = process.env.E2E_LOCAL_USERNAME || 'jrb';
-const LOCAL_PASSWORD = process.env.E2E_LOCAL_PASSWORD || 'test-password-123';
+const LOCAL_USERNAME = process.env.E2E_LOCAL_USERNAME!;
+const LOCAL_PASSWORD = process.env.E2E_LOCAL_PASSWORD!;
 const BASE_URL = process.env.BASE_URL || 'https://session-manager.lab.josnelihurt.me';
 
 test.describe('Login Flow', () => {
