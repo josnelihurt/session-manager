@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
         services.Configure<GoogleOptions>(configuration.GetSection(GoogleOptions.SectionName));
         services.Configure<InvitationOptions>(configuration.GetSection(InvitationOptions.SectionName));
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
 
         // Add DbContext
         var databaseOptions = configuration.GetSection(DatabaseOptions.SectionName).Get<DatabaseOptions>()
@@ -58,6 +59,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IInvitationService, InvitationService>();
+        services.AddScoped<IEmailService, EmailService>();
 
         // Add controllers
         services.AddControllers();

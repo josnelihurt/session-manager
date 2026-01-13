@@ -140,8 +140,8 @@ export const getAllInvitations = async () => {
   return response.data
 }
 
-export const createInvitation = async (email, provider, preAssignedRoleIds) => {
-  const response = await apiClient.post('/invitations', { email, provider, preAssignedRoleIds })
+export const createInvitation = async (email, provider, preAssignedRoleIds, sendEmail = false) => {
+  const response = await apiClient.post('/invitations', { email, provider, preAssignedRoleIds, sendEmail })
   return response.data
 }
 

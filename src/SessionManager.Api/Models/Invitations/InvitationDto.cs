@@ -18,7 +18,8 @@ public record InvitationDto(
 public record CreateInvitationRequest(
     string Email,
     string Provider,
-    Guid[]? PreAssignedRoleIds
+    Guid[]? PreAssignedRoleIds,
+    bool SendEmail = false
 );
 
 [JsonSerializable(typeof(InvitationDto))]

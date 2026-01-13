@@ -14,6 +14,7 @@ export function InvitationsPage() {
   const [email, setEmail] = useState('')
   const [provider, setProvider] = useState('local')
   const [selectedRoles, setSelectedRoles] = useState([])
+  const [sendEmail, setSendEmail] = useState(false)
   const [creating, setCreating] = useState(false)
   const [createdInvite, setCreatedInvite] = useState(null)
   const [deleting, setDeleting] = useState(false)
@@ -43,7 +44,7 @@ export function InvitationsPage() {
     setError('')
 
     try {
-      const result = await createInvitation(email, provider, selectedRoles)
+      const result = await createInvitation(email, provider, selectedRoles, sendEmail)
       setCreatedInvite(result)
       loadData()
     } catch (err) {
@@ -111,6 +112,7 @@ export function InvitationsPage() {
     setEmail('')
     setProvider('local')
     setSelectedRoles([])
+    setSendEmail(false)
     setCreatedInvite(null)
     setShowCreateModal(false)
   }
@@ -284,6 +286,17 @@ export function InvitationsPage() {
                     onRolesChange={setSelectedRoles}
                     label="Pre-assign Roles (optional)"
                   />
+
+                  <div className="form-group checkbox-group">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.checked)}
+                      />
+                      <span>Send invitation email</span>
+                    </label>
+                  </div>
 
                   <div className="modal-actions">
                     <button type="button" onClick={resetCreateForm} className="btn">
