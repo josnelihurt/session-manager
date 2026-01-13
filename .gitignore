@@ -68,6 +68,9 @@ package-lock.json
 .env.*.local
 !.env.example
 
+# Secrets
+.secrets/
+
 # OS Files
 .DS_Store
 Thumbs.db
