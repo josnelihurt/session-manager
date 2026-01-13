@@ -147,6 +147,21 @@ public class UserService : IUserService
             _logger.LogWarning(ex, "Failed to delete Redis sessions for user {UserId}", userId);
         }
 
+        // Clear invitations that were used by this user (to avoid foreign key constraint errors)
+        var invitationsUsedByUser = await _dbContext.Invitations
+            .Where(i => i.UsedById == userId)
+            .ToListAsync();
+
+        if (invitationsUsedByUser.Any())
+        {
+            foreach (var invitation in invitationsUsedByUser)
+            {
+                invitation.UsedById = null;
+                invitation.UsedAt = null;
+            }
+            _logger.LogInformation("Cleared {Count} invitation UsedById for user {UserId}", invitationsUsedByUser.Count, userId);
+        }
+
         // Remove all user sessions first (to avoid foreign key constraint errors)
         if (user.Sessions.Any())
         {
