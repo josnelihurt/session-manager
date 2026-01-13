@@ -61,6 +61,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<IEmailService, EmailService>();
 
+        // Add background services
+        services.AddHostedService<EmailQueueConsumer>();
+
         // Add controllers
         services.AddControllers();
 

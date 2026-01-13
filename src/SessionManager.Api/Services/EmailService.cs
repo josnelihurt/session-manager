@@ -20,33 +20,27 @@ public class EmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task<bool> SendInvitationEmailAsync(string toEmail, InvitationDto invitation, string[] applicationUrls)
+    public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlBody)
     {
         try
         {
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("Session Manager", _options.From));
             message.To.Add(new MailboxAddress("", toEmail));
-            message.Subject = "You're invited to join josnelihurt.me Lab";
+            message.Subject = subject;
 
-            var body = GenerateInvitationEmailBody(invitation, applicationUrls);
             message.Body = new TextPart("html")
             {
-                Text = body
+                Text = htmlBody
             };
 
             using var client = new SmtpClient();
             try
             {
-                // Connect to SMTP server
                 await client.ConnectAsync(_options.SmtpHost, _options.SmtpPort, MailKit.Security.SecureSocketOptions.StartTls);
-
-                // Authenticate
                 await client.AuthenticateAsync(_options.From, _options.Password);
-
-                // Send email
                 await client.SendAsync(message);
-                _logger.LogInformation("Invitation email sent successfully to {Email}", toEmail);
+                _logger.LogInformation("Email sent successfully to {Email}", toEmail);
                 return true;
             }
             finally
@@ -56,9 +50,16 @@ public class EmailService : IEmailService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send invitation email to {Email}", toEmail);
+            _logger.LogError(ex, "Failed to send email to {Email}", toEmail);
             return false;
         }
+    }
+
+    public async Task<bool> SendInvitationEmailAsync(string toEmail, InvitationDto invitation, string[] applicationUrls)
+    {
+        var subject = "You're invited to join josnelihurt.me Lab";
+        var body = GenerateInvitationEmailBody(invitation, applicationUrls);
+        return await SendEmailAsync(toEmail, subject, body);
     }
 
     private string GenerateInvitationEmailBody(InvitationDto invitation, string[] applicationUrls)
