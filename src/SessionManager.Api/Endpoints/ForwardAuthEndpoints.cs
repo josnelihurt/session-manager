@@ -8,6 +8,8 @@ public static class ForwardAuthEndpoints
 {
     public static void MapForwardAuthEndpoints(this IEndpointRouteBuilder app)
     {
+        var configuration = app.ServiceProvider.GetRequiredService<IConfiguration>();
+
         // GET /auth - ForwardAuth endpoint for Traefik
         app.MapGet("/auth", async (
             HttpRequest request,
@@ -16,6 +18,30 @@ public static class ForwardAuthEndpoints
             IOptions<AuthOptions> authOptions,
             ILogger<Program> logger) =>
         {
+            // Get requested application URL and path from Traefik headers
+            var forwardedHost = request.Headers["X-Forwarded-Host"].FirstOrDefault()
+                ?? request.Headers["X-Original-Host"].FirstOrDefault()
+                ?? request.Headers["Host"].FirstOrDefault();
+            var applicationUrl = forwardedHost ?? "";
+
+            // Get the request path from X-Forwarded-Uri or X-Original-URI
+            var forwardedUri = request.Headers["X-Forwarded-Uri"].FirstOrDefault()
+                ?? request.Headers["X-Original-URI"].FirstOrDefault()
+                ?? "";
+
+            // Extract the path portion (without query string)
+            var requestPath = ExtractPath(forwardedUri);
+
+            logger.LogDebug("ForwardAuth: Checking {App} with path {Path}", applicationUrl, requestPath);
+
+            // Check if this path should skip authentication (from configuration)
+            var skipPathsConfiguration = configuration["SkipAuthPaths"] ?? "";
+            if (!string.IsNullOrEmpty(skipPathsConfiguration) && SkipPathMatcher.ShouldSkipPath(requestPath, skipPathsConfiguration))
+            {
+                logger.LogDebug("ForwardAuth: Path {Path} matches skip patterns - allowing without auth", requestPath);
+                return Results.Ok();
+            }
+
             var cookieName = authOptions.Value.CookieName;
             var sessionKey = request.Cookies[cookieName];
 
@@ -41,10 +67,6 @@ public static class ForwardAuthEndpoints
                 await response.WriteAsync(html);
                 return Results.Empty;
             }
-
-            // Get requested application URL from Traefik headers
-            var forwardedHost = request.Headers["X-Forwarded-Host"].FirstOrDefault();
-            var applicationUrl = forwardedHost ?? "";
 
             logger.LogDebug("ForwardAuth: User {User} requesting access to {App}",
                 user.Username, applicationUrl);
@@ -158,5 +180,35 @@ public static class ForwardAuthEndpoints
             await stream.CopyToAsync(response.Body, cancellationToken);
             return Results.Empty;
         });
+    }
+
+    private static string ExtractPath(string uri)
+    {
+        if (string.IsNullOrEmpty(uri))
+        {
+            return "/";
+        }
+
+        // Remove query string and fragment
+        var queryIndex = uri.IndexOf('?');
+        if (queryIndex > 0)
+        {
+            uri = uri[..queryIndex];
+        }
+
+        var fragmentIndex = uri.IndexOf('#');
+        if (fragmentIndex > 0)
+        {
+            uri = uri[..fragmentIndex];
+        }
+
+        // Parse the URI to get the path
+        if (Uri.TryCreate(uri, UriKind.Absolute, out var parsedUri))
+        {
+            return parsedUri.AbsolutePath;
+        }
+
+        // If not a valid URI, treat it as a path directly
+        return uri.StartsWith('/') ? uri : "/" + uri;
     }
 }

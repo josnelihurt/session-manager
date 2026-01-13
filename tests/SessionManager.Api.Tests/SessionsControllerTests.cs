@@ -1,7 +1,9 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
+using SessionManager.Api.Configuration;
 using SessionManager.Api.Controllers;
 using SessionManager.Api.Models;
 using SessionManager.Api.Services;
@@ -12,24 +14,38 @@ namespace SessionManager.Api.Tests;
 public class SessionsControllerTests
 {
     private readonly Mock<ISessionService> _sessionServiceMock;
+    private readonly Mock<IAuthService> _authServiceMock;
     private readonly Mock<ILogger<SessionsController>> _loggerMock;
+    private readonly Mock<IOptions<AuthOptions>> _authOptionsMock;
     private readonly SessionsController _controller;
 
     public SessionsControllerTests()
     {
         _sessionServiceMock = new Mock<ISessionService>();
+        _authServiceMock = new Mock<IAuthService>();
         _loggerMock = new Mock<ILogger<SessionsController>>();
-        _controller = new SessionsController(_sessionServiceMock.Object, _loggerMock.Object);
+        _authOptionsMock = new Mock<IOptions<AuthOptions>>();
+
+        var authOptions = new AuthOptions
+        {
+            CookieName = "_session_manager",
+            CookieDomain = ".lab.josnelihurt.me",
+            SessionLifetimeHours = 24
+        };
+        _authOptionsMock.Setup(x => x.Value).Returns(authOptions);
+
+        _controller = new SessionsController(_sessionServiceMock.Object, _authServiceMock.Object, _authOptionsMock.Object, _loggerMock.Object);
     }
 
     [Fact]
     public async Task GetSessions_ReturnsOkWithSessions_WhenSessionsExist()
     {
         // Arrange
+        var testUserId = Guid.NewGuid();
         var sessions = new List<SessionInfo>
         {
-            new("abc123", "_oauth2_proxy_redis", 3600000, DateTime.UtcNow.AddHours(1), "_oauth2_proxy_redis-abc123"),
-            new("def456", "_oauth2_proxy_redis", 7200000, DateTime.UtcNow.AddHours(2), "_oauth2_proxy_redis-def456")
+            new("abc123", "_oauth2_proxy_redis", 3600000, DateTime.UtcNow.AddHours(1), "_oauth2_proxy_redis-abc123", testUserId, "testuser", "test@example.com"),
+            new("def456", "_oauth2_proxy_redis", 7200000, DateTime.UtcNow.AddHours(2), "_oauth2_proxy_redis-def456", testUserId, "testuser", "test@example.com")
         };
         _sessionServiceMock.Setup(s => s.GetAllSessionsAsync()).ReturnsAsync(sessions);
 

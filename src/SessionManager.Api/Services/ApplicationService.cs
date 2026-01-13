@@ -31,7 +31,22 @@ public class ApplicationService : IApplicationService
 
     public async Task<IEnumerable<ApplicationDto>> GetUserApplicationsAsync(Guid userId)
     {
-        // Get user's roles
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null) return Enumerable.Empty<ApplicationDto>();
+
+        // Super admin can see all active applications
+        if (user.IsSuperAdmin)
+        {
+            var allApps = await _dbContext.Applications
+                .Include(a => a.Roles)
+                .Where(a => a.IsActive)
+                .OrderBy(a => a.Name)
+                .ToListAsync();
+
+            return allApps.Select(MapToDto);
+        }
+
+        // Regular users get only applications they have roles for
         var userRoles = await _dbContext.UserRoles
             .Where(ur => ur.UserId == userId)
             .Include(ur => ur.Role)
