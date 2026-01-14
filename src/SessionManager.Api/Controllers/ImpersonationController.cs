@@ -12,7 +12,7 @@ using System.Text;
 namespace SessionManager.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/impersonate")]
 public class ImpersonationController : ControllerBase
 {
     private readonly IImpersonationService _impersonationService;
