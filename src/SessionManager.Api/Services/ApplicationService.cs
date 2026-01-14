@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using SessionManager.Api.Configuration;
 using SessionManager.Api.Data;
 using SessionManager.Api.Entities;
 using SessionManager.Api.Mappers;
@@ -99,7 +100,7 @@ public class ApplicationService : IApplicationService
         await _dbContext.SaveChangesAsync();
 
         // Create default roles
-        var defaultRoles = new[] { "admin", "user", "viewer" };
+        var defaultRoles = new[] { SessionManagerConstants.AdminRole, SessionManagerConstants.UserRole, SessionManagerConstants.ViewerRole };
         foreach (var roleName in defaultRoles)
         {
             var role = new Role
@@ -201,26 +202,26 @@ public class ApplicationService : IApplicationService
     {
         var permissions = roleName switch
         {
-            "admin" => new Dictionary<string, bool>
+            SessionManagerConstants.AdminRole => new Dictionary<string, bool>
             {
-                ["read"] = true,
-                ["write"] = true,
-                ["delete"] = true,
-                ["admin"] = true
+                [SessionManagerConstants.PermissionRead] = true,
+                [SessionManagerConstants.PermissionWrite] = true,
+                [SessionManagerConstants.PermissionDelete] = true,
+                [SessionManagerConstants.PermissionAdmin] = true
             },
-            "user" => new Dictionary<string, bool>
+            SessionManagerConstants.UserRole => new Dictionary<string, bool>
             {
-                ["read"] = true,
-                ["write"] = true,
-                ["delete"] = false,
-                ["admin"] = false
+                [SessionManagerConstants.PermissionRead] = true,
+                [SessionManagerConstants.PermissionWrite] = true,
+                [SessionManagerConstants.PermissionDelete] = false,
+                [SessionManagerConstants.PermissionAdmin] = false
             },
-            "viewer" => new Dictionary<string, bool>
+            SessionManagerConstants.ViewerRole => new Dictionary<string, bool>
             {
-                ["read"] = true,
-                ["write"] = false,
-                ["delete"] = false,
-                ["admin"] = false
+                [SessionManagerConstants.PermissionRead] = true,
+                [SessionManagerConstants.PermissionWrite] = false,
+                [SessionManagerConstants.PermissionDelete] = false,
+                [SessionManagerConstants.PermissionAdmin] = false
             },
             _ => new Dictionary<string, bool>()
         };

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using SessionManager.Api.Configuration;
 using SessionManager.Api.Entities;
 using SessionManager.Api.Models.Applications;
 

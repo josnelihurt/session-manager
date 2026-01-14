@@ -32,7 +32,7 @@ public class GoogleOAuthService : IGoogleOAuthService
             ? $"{state}|{invitationToken}"
             : state;
 
-        return $"https://accounts.google.com/o/oauth2/v2/auth?" +
+        return $"{SessionManagerConstants.Urls.GoogleAuthUrl}?" +
                $"client_id={_options.ClientId}&" +
                $"redirect_uri={redirectUri}&" +
                $"response_type=code&" +
@@ -56,7 +56,7 @@ public class GoogleOAuthService : IGoogleOAuthService
             });
 
             var response = await _httpClient.PostAsync(
-                "https://oauth2.googleapis.com/token", content);
+                SessionManagerConstants.Urls.GoogleTokenUrl, content);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -89,8 +89,8 @@ public class GoogleOAuthService : IGoogleOAuthService
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Get,
-                "https://www.googleapis.com/oauth2/v2/userinfo");
-            request.Headers.Authorization = new("Bearer", accessToken);
+                SessionManagerConstants.Urls.GoogleUserInfoUrl);
+            request.Headers.Authorization = new(SessionManagerConstants.HttpHeaders.BearerScheme, accessToken);
 
             var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode) return null;

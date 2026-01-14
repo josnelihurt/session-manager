@@ -111,7 +111,7 @@ public class RedisSessionService : ISessionService
 
     public async Task<string> CreateSessionAsync(Guid userId, string username, string email, bool isSuperAdmin, string ipAddress, string userAgent)
     {
-        var sessionKey = $"session_manager:{Guid.NewGuid():N}";
+        var sessionKey = $"{SessionManagerConstants.RedisSessionPrefix}{Guid.NewGuid():N}";
         var db = _redis.GetDatabase();
 
         // Create session data with 4 hour expiry

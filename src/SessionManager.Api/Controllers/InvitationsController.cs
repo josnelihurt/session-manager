@@ -238,8 +238,8 @@ public class InvitationsController : ControllerBase
     {
         var providerText = invitation.Provider switch
         {
-            "google" => "Google",
-            "local" => "Email/Password",
+            SessionManagerConstants.GoogleProvider => SessionManagerConstants.GoogleProviderDisplayName,
+            SessionManagerConstants.LocalProvider => SessionManagerConstants.LocalProviderDisplayName,
             _ => invitation.Provider
         };
 
@@ -308,7 +308,7 @@ public class InvitationsController : ControllerBase
 
         sb.AppendLine("            <p style=\"margin: 30px 0 0; text-align: center; color: rgba(242, 242, 242, 0.7); font-size: 14px;\">");
         sb.AppendLine("                After creating your account, you can access the dashboard at:<br>");
-        sb.AppendLine("                <a href=\"https://session-manager.lab.josnelihurt.me/dashboard\" style=\"color: #F4D35E; text-decoration: none; font-weight: 500;\">session-manager.lab.josnelihurt.me/dashboard</a>");
+        sb.AppendLine($"                <a href=\"{SessionManagerConstants.Urls.DashboardUrl}\" style=\"color: #F4D35E; text-decoration: none; font-weight: 500;\">session-manager.lab.josnelihurt.me/dashboard</a>");
         sb.AppendLine("            </p>");
         sb.AppendLine("        </div>");
 

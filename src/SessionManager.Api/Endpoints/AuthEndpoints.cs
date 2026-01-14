@@ -42,7 +42,7 @@ public static class AuthEndpoints
             }
 
             // Local users require OTP
-            if (user.Provider == "local")
+            if (user.Provider == SessionManagerConstants.LocalProvider)
             {
                 // If OTP code is provided, verify it
                 if (!string.IsNullOrEmpty(request.OtpCode))
@@ -61,9 +61,9 @@ public static class AuthEndpoints
                     }
 
                     // Set session cookie
-                    httpRequest.HttpContext.Response.Cookies.Append(authOptions.Value.CookieName, result.SessionKey!, new CookieOptions
+                    httpRequest.HttpContext.Response.Cookies.Append(SessionManagerConstants.SessionCookieName, result.SessionKey!, new CookieOptions
                     {
-                        Domain = authOptions.Value.CookieDomain,
+                        Domain = SessionManagerConstants.CookieDomain,
                         Path = "/",
                         HttpOnly = true,
                         Secure = true,
@@ -238,20 +238,20 @@ public static class AuthEndpoints
             });
 
             // If user logged in with OAuth provider, redirect to provider's logout
-            if (provider == "auth0")
+            if (provider == SessionManagerConstants.Auth0Provider)
             {
                 var domain = auth0Options.Value.Domain.StartsWith("http")
                     ? auth0Options.Value.Domain
                     : $"https://{auth0Options.Value.Domain}";
 
-                var returnTo = Uri.EscapeDataString($"{request.Scheme}://{request.Host}/login");
+                var returnTo = Uri.EscapeDataString($"{request.Scheme}://{request.Host}{SessionManagerConstants.Routes.Login}");
                 // Add federated parameter to logout from all identity providers
                 var logoutUrl = $"{domain}/v2/logout?client_id={auth0Options.Value.ClientId}&returnTo={returnTo}&federated";
                 return Results.Redirect(logoutUrl);
             }
 
             // Default: redirect to login page
-            return Results.Redirect("/login");
+            return Results.Redirect(SessionManagerConstants.Routes.Login);
         });
 
         // GET /api/test - Test endpoint
@@ -311,13 +311,13 @@ public static class AuthEndpoints
             var googleUser = await googleService.GetUserInfoAsync(tokens.AccessToken);
             if (googleUser == null || !googleUser.EmailVerified)
             {
-                return Results.Redirect($"/login?error={Uri.EscapeDataString("Could not verify Google account")}");
+                return Results.Redirect($"{SessionManagerConstants.Routes.Login}?error={Uri.EscapeDataString("Could not verify Google account")}");
             }
 
             // Check if user exists
             var user = await dbContext.Users
                 .FirstOrDefaultAsync(u =>
-                    (u.Provider == "google" && u.ProviderId == googleUser.Id) ||
+                    (u.Provider == SessionManagerConstants.GoogleProvider && u.ProviderId == googleUser.Id) ||
                     (u.Email == googleUser.Email));
 
             // For Google OAuth, we create user if not exists
@@ -349,7 +349,7 @@ public static class AuthEndpoints
                 {
                     Username = googleUser.Email.Split('@')[0],
                     Email = googleUser.Email,
-                    Provider = "google",
+                    Provider = SessionManagerConstants.GoogleProvider,
                     ProviderId = googleUser.Id,
                     IsActive = true,
                     IsSuperAdmin = false
@@ -400,9 +400,9 @@ public static class AuthEndpoints
             var sessionKey = await sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, ipAddress, userAgent);
 
             // Set session cookie
-            httpRequest.HttpContext.Response.Cookies.Append(authOptions.Value.CookieName, sessionKey, new CookieOptions
+            httpRequest.HttpContext.Response.Cookies.Append(SessionManagerConstants.SessionCookieName, sessionKey, new CookieOptions
             {
-                Domain = authOptions.Value.CookieDomain,
+                Domain = SessionManagerConstants.CookieDomain,
                 Path = "/",
                 HttpOnly = true,
                 Secure = true,
@@ -411,7 +411,7 @@ public static class AuthEndpoints
             });
 
             // Redirect to dashboard
-            return Results.Redirect("/dashboard");
+            return Results.Redirect(SessionManagerConstants.Routes.Dashboard);
         });
     }
 }

@@ -149,7 +149,7 @@ public class EmailService : IEmailService
         sb.AppendLine("            <!-- Dashboard Link -->");
         sb.AppendLine("            <p style=\"margin: 30px 0 0; text-align: center; color: rgba(242, 242, 242, 0.7); font-size: 14px;\">");
         sb.AppendLine("                After creating your account, you can access the dashboard at:<br>");
-        sb.AppendLine("                <a href=\"https://session-manager.lab.josnelihurt.me/dashboard\" style=\"color: #F4D35E; text-decoration: none; font-weight: 500;\">session-manager.lab.josnelihurt.me/dashboard</a>");
+        sb.AppendLine($"                <a href=\"{SessionManagerConstants.Urls.DashboardUrl}\" style=\"color: #F4D35E; text-decoration: none; font-weight: 500;\">session-manager.lab.josnelihurt.me/dashboard</a>");
         sb.AppendLine("            </p>");
         sb.AppendLine("        </div>");
 

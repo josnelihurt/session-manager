@@ -110,13 +110,13 @@ public static class Auth0Endpoints
             // Check if user already exists by ProviderId or Email
             var user = await dbContext.Users
                 .FirstOrDefaultAsync(u =>
-                    (u.Provider == "auth0" && u.ProviderId == auth0User.UserId) ||
+                    (u.Provider == SessionManagerConstants.Auth0Provider && u.ProviderId == auth0User.UserId) ||
                     (u.Email == auth0User.Email));
 
             if (user != null)
             {
                 // User exists - verify they are using Auth0 provider
-                if (user.Provider != "auth0")
+                if (user.Provider != SessionManagerConstants.Auth0Provider)
                 {
                     logger.LogWarning("User {Email} already exists with provider {Provider}, cannot use Auth0",
                         auth0User.Email, user.Provider);
@@ -147,7 +147,7 @@ public static class Auth0Endpoints
                 }
 
                 // Check if invitation is for Auth0 provider
-                if (invitationDto.Provider != "auth0")
+                if (invitationDto.Provider != SessionManagerConstants.Auth0Provider)
                 {
                     logger.LogWarning("Invitation {Token} is for provider {Provider}, not auth0",
                         invitationToken.Substring(0, 8) + "...", invitationDto.Provider);
@@ -159,7 +159,7 @@ public static class Auth0Endpoints
                 {
                     Username = auth0User.Email.Split('@')[0],
                     Email = auth0User.Email,
-                    Provider = "auth0",
+                    Provider = SessionManagerConstants.Auth0Provider,
                     ProviderId = auth0User.UserId,
                     IsActive = true,
                     IsSuperAdmin = false,
@@ -208,9 +208,9 @@ public static class Auth0Endpoints
             var sessionKey = await sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, ipAddress, userAgent);
 
             // Set session cookie
-            httpRequest.HttpContext.Response.Cookies.Append(authOptions.Value.CookieName, sessionKey, new CookieOptions
+            httpRequest.HttpContext.Response.Cookies.Append(SessionManagerConstants.SessionCookieName, sessionKey, new CookieOptions
             {
-                Domain = authOptions.Value.CookieDomain,
+                Domain = SessionManagerConstants.CookieDomain,
                 Path = "/",
                 HttpOnly = true,
                 Secure = true,
@@ -219,7 +219,7 @@ public static class Auth0Endpoints
             });
 
             // Redirect to dashboard on success
-            return Results.Redirect("/dashboard");
+            return Results.Redirect(SessionManagerConstants.Routes.Dashboard);
         });
     }
 

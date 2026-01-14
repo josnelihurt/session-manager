@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SessionManager.Api.Configuration;
 using SessionManager.Api.Data;
 using SessionManager.Api.Models.Auth;
 using SessionManager.Api.Entities;
@@ -161,7 +162,7 @@ public class AuthService : IAuthService
         }
 
         // Check if provider is supported
-        if (request.Provider != "local")
+        if (request.Provider != SessionManagerConstants.LocalProvider)
         {
             _logger.LogWarning("Registration failed: unsupported provider {Provider}", request.Provider);
             return new LoginResponse(Success: false, Error: "Only local registration is supported. Use Google OAuth button instead.");

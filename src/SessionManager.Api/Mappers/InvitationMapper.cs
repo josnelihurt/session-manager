@@ -1,3 +1,4 @@
+using SessionManager.Api.Configuration;
 using SessionManager.Api.Entities;
 using SessionManager.Api.Models.Invitations;
 
@@ -5,8 +6,6 @@ namespace SessionManager.Api.Mappers;
 
 public static class InvitationMapper
 {
-    private const string BaseUrl = "https://session-manager.lab.josnelihurt.me";
-
     public static InvitationDto ToDto(Invitation invitation)
     {
         return new InvitationDto(
@@ -19,7 +18,7 @@ public static class InvitationMapper
             ExpiresAt: invitation.ExpiresAt,
             UsedAt: invitation.UsedAt,
             IsUsed: invitation.UsedAt != null,
-            InviteUrl: $"{BaseUrl}/register?token={invitation.Token}"
+            InviteUrl: $"{SessionManagerConstants.Urls.BaseUrl}/register?token={invitation.Token}"
         );
     }
 

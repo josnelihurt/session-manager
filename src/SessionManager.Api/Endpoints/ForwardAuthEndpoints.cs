@@ -19,14 +19,14 @@ public static class ForwardAuthEndpoints
             ILogger<Program> logger) =>
         {
             // Get requested application URL and path from Traefik headers
-            var forwardedHost = request.Headers["X-Forwarded-Host"].FirstOrDefault()
-                ?? request.Headers["X-Original-Host"].FirstOrDefault()
-                ?? request.Headers["Host"].FirstOrDefault();
+            var forwardedHost = request.Headers[SessionManagerConstants.HttpHeaders.XForwardedHost].FirstOrDefault()
+                ?? request.Headers[SessionManagerConstants.HttpHeaders.XOriginalHost].FirstOrDefault()
+                ?? request.Headers[SessionManagerConstants.HttpHeaders.Host].FirstOrDefault();
             var applicationUrl = forwardedHost ?? "";
 
             // Get the request path from X-Forwarded-Uri or X-Original-URI
-            var forwardedUri = request.Headers["X-Forwarded-Uri"].FirstOrDefault()
-                ?? request.Headers["X-Original-URI"].FirstOrDefault()
+            var forwardedUri = request.Headers[SessionManagerConstants.HttpHeaders.XForwardedUri].FirstOrDefault()
+                ?? request.Headers[SessionManagerConstants.HttpHeaders.XOriginalUri].FirstOrDefault()
                 ?? "";
 
             // Extract the path portion (without query string)
@@ -42,8 +42,7 @@ public static class ForwardAuthEndpoints
                 return Results.Ok();
             }
 
-            var cookieName = authOptions.Value.CookieName;
-            var sessionKey = request.Cookies[cookieName];
+            var sessionKey = request.Cookies[SessionManagerConstants.SessionCookieName];
 
             // No session cookie
             if (string.IsNullOrEmpty(sessionKey))
@@ -91,10 +90,10 @@ public static class ForwardAuthEndpoints
             }
 
             // Set response headers for downstream services
-            response.Headers.Append("X-Auth-Request-User", user.Username);
-            response.Headers.Append("X-Auth-Request-Email", user.Email);
-            response.Headers.Append("X-Session-Manager-Id", sessionKey);
-            response.Headers.Append("X-User-Is-Admin", user.IsSuperAdmin.ToString().ToLower());
+            response.Headers.Append(SessionManagerConstants.HttpHeaders.XAuthRequestUser, user.Username);
+            response.Headers.Append(SessionManagerConstants.HttpHeaders.XAuthRequestEmail, user.Email);
+            response.Headers.Append(SessionManagerConstants.HttpHeaders.XSessionManagerId, sessionKey);
+            response.Headers.Append(SessionManagerConstants.HttpHeaders.XUserIsAdmin, user.IsSuperAdmin.ToString().ToLower());
 
             logger.LogDebug("ForwardAuth: User {User} granted access to {App}",
                 user.Username, applicationUrl);
@@ -110,8 +109,7 @@ public static class ForwardAuthEndpoints
             IOptions<AuthOptions> authOptions,
             ILogger<Program> logger) =>
         {
-            var cookieName = authOptions.Value.CookieName;
-            var sessionKey = request.Cookies[cookieName];
+            var sessionKey = request.Cookies[SessionManagerConstants.SessionCookieName];
 
             if (string.IsNullOrEmpty(sessionKey))
             {
@@ -157,8 +155,8 @@ public static class ForwardAuthEndpoints
                 }
             }
 
-            request.HttpContext.Response.Headers.Append("X-Auth-Request-User", user.Username);
-            request.HttpContext.Response.Headers.Append("X-Auth-Request-Email", user.Email);
+            request.HttpContext.Response.Headers.Append(SessionManagerConstants.HttpHeaders.XAuthRequestUser, user.Username);
+            request.HttpContext.Response.Headers.Append(SessionManagerConstants.HttpHeaders.XAuthRequestEmail, user.Email);
 
             return Results.Text("");
         });
