@@ -19,6 +19,7 @@ public static class ServiceCollectionExtensions
         services.Configure<DatabaseOptions>(configuration.GetSection(DatabaseOptions.SectionName));
         services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
         services.Configure<GoogleOptions>(configuration.GetSection(GoogleOptions.SectionName));
+        services.Configure<Auth0Options>(configuration.GetSection(Auth0Options.SectionName));
         services.Configure<InvitationOptions>(configuration.GetSection(InvitationOptions.SectionName));
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
 
@@ -56,6 +57,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
         services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>();
+        services.AddScoped<IAuth0Service, Auth0Service>();
+        services.AddHttpClient<IAuth0Service, Auth0Service>();
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IInvitationService, InvitationService>();

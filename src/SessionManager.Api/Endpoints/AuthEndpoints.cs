@@ -192,7 +192,7 @@ public static class AuthEndpoints
             return Results.Ok(user);
         });
 
-        // POST /api/auth/logout - Logout
+        // POST /api/auth/logout - Logout (API logout for AJAX requests)
         app.MapPost("/api/auth/logout", async (
             HttpRequest request,
             IAuthService authService,
@@ -211,6 +211,47 @@ public static class AuthEndpoints
             });
 
             return Results.Ok(new MessageResponse("Logged out"));
+        });
+
+        // GET /api/auth/logout - Logout (Redirects to Auth0 for full logout)
+        app.MapGet("/api/auth/logout", async (
+            HttpRequest request,
+            IAuthService authService,
+            IOptions<AuthOptions> authOptions,
+            IOptions<GoogleOptions> googleOptions,
+            IOptions<Auth0Options> auth0Options) =>
+        {
+            var sessionKey = request.Cookies[authOptions.Value.CookieName];
+            string? provider = null;
+
+            if (!string.IsNullOrEmpty(sessionKey))
+            {
+                var user = await authService.GetCurrentUserAsync(sessionKey);
+                provider = user?.Provider;
+                await authService.LogoutAsync(sessionKey);
+            }
+
+            request.HttpContext.Response.Cookies.Delete(authOptions.Value.CookieName, new CookieOptions
+            {
+                Domain = authOptions.Value.CookieDomain,
+                Path = "/"
+            });
+
+            // If user logged in with OAuth provider, redirect to provider's logout
+            if (provider == "auth0")
+            {
+                var domain = auth0Options.Value.Domain.StartsWith("http")
+                    ? auth0Options.Value.Domain
+                    : $"https://{auth0Options.Value.Domain}";
+
+                var returnTo = Uri.EscapeDataString($"{request.Scheme}://{request.Host}/login");
+                // Add federated parameter to logout from all identity providers
+                var logoutUrl = $"{domain}/v2/logout?client_id={auth0Options.Value.ClientId}&returnTo={returnTo}&federated";
+                return Results.Redirect(logoutUrl);
+            }
+
+            // Default: redirect to login page
+            return Results.Redirect("/login");
         });
 
         // GET /api/test - Test endpoint

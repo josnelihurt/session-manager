@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react'
 import { AdminLayout } from '../../components/Layout/AdminLayout'
 import { RoleSelector } from '../../components/RoleSelector'
-import { getAllApplications, createInvitation, deleteInvitation, resendInvitationEmail } from '../../api'
+import { getAllApplications, createInvitation, deleteInvitation, resendInvitationEmail, getProviders } from '../../api'
 
 export function InvitationsPage() {
   const [invitations, setInvitations] = useState([])
   const [applications, setApplications] = useState([])
+  const [providers, setProviders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedInvitations, setSelectedInvitations] = useState(new Set())
 
   const [email, setEmail] = useState('')
-  const [provider, setProvider] = useState('local')
+  const [provider, setProvider] = useState('')
   const [selectedRoles, setSelectedRoles] = useState([])
   const [sendEmail, setSendEmail] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -23,14 +24,22 @@ export function InvitationsPage() {
     loadData()
   }, [])
 
+  useEffect(() => {
+    if (providers.length > 0 && !provider) {
+      setProvider(providers[0].name)
+    }
+  }, [providers, provider])
+
   const loadData = async () => {
     try {
-      const [invData, appsData] = await Promise.all([
+      const [invData, appsData, providersData] = await Promise.all([
         fetch('/api/invitations').then(r => r.json()),
-        getAllApplications()
+        getAllApplications(),
+        getProviders()
       ])
       setInvitations(invData)
       setApplications(appsData)
+      setProviders(providersData)
     } catch (err) {
       setError('Failed to load data')
     } finally {
@@ -120,7 +129,7 @@ export function InvitationsPage() {
 
   const resetCreateForm = () => {
     setEmail('')
-    setProvider('local')
+    setProvider(providers.length > 0 ? providers[0].name : '')
     setSelectedRoles([])
     setSendEmail(true)
     setCreatedInvite(null)
@@ -291,8 +300,9 @@ export function InvitationsPage() {
                       value={provider}
                       onChange={(e) => setProvider(e.target.value)}
                     >
-                      <option value="google">Google only</option>
-                      <option value="local">Local only</option>
+                      {providers.map((p) => (
+                        <option key={p.name} value={p.name}>{p.displayName}</option>
+                      ))}
                     </select>
                   </div>
 

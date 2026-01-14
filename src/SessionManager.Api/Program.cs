@@ -42,6 +42,7 @@ using (var scope = app.Services.CreateScope())
 // Map controllers and endpoints
 app.MapControllers();
 app.MapAuthEndpoints();
+app.MapAuth0Endpoints();
 app.MapForwardAuthEndpoints();
 
 app.Run();

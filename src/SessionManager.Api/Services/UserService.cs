@@ -9,15 +9,18 @@ public class UserService : IUserService
 {
     private readonly SessionManagerDbContext _dbContext;
     private readonly ISessionService _sessionService;
+    private readonly IAuth0Service _auth0Service;
     private readonly ILogger<UserService> _logger;
 
     public UserService(
         SessionManagerDbContext dbContext,
         ISessionService sessionService,
+        IAuth0Service auth0Service,
         ILogger<UserService> logger)
     {
         _dbContext = dbContext;
         _sessionService = sessionService;
+        _auth0Service = auth0Service;
         _logger = logger;
     }
 
@@ -180,7 +183,21 @@ public class UserService : IUserService
         _dbContext.Users.Remove(user);
         await _dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Deleted user {UserId} ({Username})", userId, user.Username);
+        _logger.LogInformation("Deleted user {UserId} ({Username}) from database", userId, user.Username);
+
+        // If user was created with Auth0, also delete from Auth0
+        if (user.Provider == "auth0" && !string.IsNullOrEmpty(user.ProviderId))
+        {
+            try
+            {
+                await _auth0Service.DeleteUserAsync(user.ProviderId);
+                _logger.LogInformation("Deleted user {UserId} from Auth0", user.ProviderId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete user {UserId} from Auth0", user.ProviderId);
+            }
+        }
 
         return true;
     }

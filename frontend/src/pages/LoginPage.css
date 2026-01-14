@@ -283,6 +283,26 @@
   box-shadow: 0 4px 12px rgba(244, 211, 94, 0.2);
 }
 
+.btn-auth0 {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #F2F2F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.btn-auth0:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #F4D35E;
+  box-shadow: 0 4px 12px rgba(244, 211, 94, 0.2);
+}
+
 /* Register page specific styles */
 .invitation-info {
   background: rgba(244, 211, 94, 0.15);
@@ -346,6 +366,16 @@
 }
 
 .google-register p {
+  margin-bottom: 1rem;
+  color: rgba(242, 242, 242, 0.7);
+  font-size: 0.85rem;
+}
+
+.oauth-register {
+  text-align: center;
+}
+
+.oauth-register p {
   margin-bottom: 1rem;
   color: rgba(242, 242, 242, 0.7);
   font-size: 0.85rem;

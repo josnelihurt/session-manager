@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import './LoginPage.css'
 
 export function LoginPage() {
-  const { login, loginWithGoogle } = useAuth()
+  const { login, loginWithGoogle, loginWithAuth0 } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [otpCode, setOtpCode] = useState('')
@@ -117,6 +117,17 @@ export function LoginPage() {
                 <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.272C4.672 5.142 6.656 3.58 9 3.58z" fill="#EA4335"/>
               </svg>
               Sign in with Google
+            </button>
+
+            <button
+              type="button"
+              onClick={loginWithAuth0}
+              className="btn btn-auth0"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+                <path d="M9 0C4.029 0 0 4.029 0 9s4.029 9 9 9 9-4.029 9-9-4.029-9-9-9zm0 16.2c-3.969 0-7.2-3.231-7.2-7.2S5.031 1.8 9 1.8s7.2 3.231 7.2 7.2-3.231 7.2-7.2 7.2zm.9-10.8h-1.8v5.4l4.5 2.7.9-1.44-3.6-2.16V5.4z"/>
+              </svg>
+              Sign in with Auth0
             </button>
           </>
         ) : (

@@ -38,12 +38,14 @@ export function AuthProvider({ children }) {
     window.location.href = '/api/auth/login/google'
   }
 
-  const logout = async () => {
-    try {
-      await api.post('/auth/logout')
-    } finally {
-      setUser(null)
-    }
+  const loginWithAuth0 = () => {
+    // Add forceLogin=true to require credentials each time (not SSO)
+    window.location.href = '/api/auth/login/auth0?forceLogin=true'
+  }
+
+  const logout = () => {
+    // Redirect to GET /api/auth/logout which handles OAuth provider logout
+    window.location.href = '/api/auth/logout'
   }
 
   return (
@@ -52,6 +54,7 @@ export function AuthProvider({ children }) {
       loading,
       login,
       loginWithGoogle,
+      loginWithAuth0,
       logout,
       isSuperAdmin: user?.isSuperAdmin || false,
     }}>
