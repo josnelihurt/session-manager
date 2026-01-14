@@ -93,6 +93,7 @@ export function AuthProvider({ children }) {
       checkImpersonationStatus,
       isSuperAdmin: user?.isSuperAdmin || false,
       isImpersonating: impersonation?.isImpersonating || false,
+      canImpersonate: user?.canImpersonate || false,
     }}>
       {children}
     </AuthContext.Provider>

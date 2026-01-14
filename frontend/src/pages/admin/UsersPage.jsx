@@ -18,7 +18,7 @@ export function UsersPage() {
   const [deleting, setDeleting] = useState(false)
   const [activeImpersonations, setActiveImpersonations] = useState([])
   const [loadingImpersonations, setLoadingImpersonations] = useState(false)
-  const { isSuperAdmin } = useAuth()
+  const { isSuperAdmin, canImpersonate: hasImpersonatePermission } = useAuth()
 
   useEffect(() => {
     loadData()
@@ -33,8 +33,8 @@ export function UsersPage() {
       setUsers(usersData)
       setApplications(appsData)
 
-      // Load active impersonations for super admins
-      if (isSuperAdmin) {
+      // Load active impersonations for users with impersonate permission
+      if (hasImpersonatePermission) {
         loadImpersonations()
       }
     } catch (err) {
@@ -145,13 +145,16 @@ export function UsersPage() {
   }
 
   const canImpersonate = (user) => {
-    if (!isSuperAdmin) return false
+    if (!hasImpersonatePermission) return false
     if (user.isSuperAdmin) return false
     if (!user.isActive) return false
     // Check if user is already being impersonated
     if (isUserBeingImpersonated(user.id)) return false
     return true
   }
+
+  // Only Super Admins can manage users (edit roles, delete)
+  const canManageUsers = isSuperAdmin
 
   const isUserBeingImpersonated = (userId) => {
     return activeImpersonations.some(imp => imp.targetUsername && users.find(u => u.id === userId)?.username === imp.targetUsername)
@@ -178,13 +181,15 @@ export function UsersPage() {
       )}
 
       <div className="actions-bar">
-        <button
-          onClick={handleBulkDelete}
-          className="btn btn-danger"
-          disabled={selectedUsers.size === 0 || deleting}
-        >
-          {deleting ? 'Deleting...' : `Delete Selected (${selectedUsers.size})`}
-        </button>
+        {canManageUsers && (
+          <button
+            onClick={handleBulkDelete}
+            className="btn btn-danger"
+            disabled={selectedUsers.size === 0 || deleting}
+          >
+            {deleting ? 'Deleting...' : `Delete Selected (${selectedUsers.size})`}
+          </button>
+        )}
       </div>
 
       <table className="data-table">
@@ -274,18 +279,22 @@ export function UsersPage() {
                 <td className="actions">
                   {!user.isSuperAdmin && (
                     <>
-                      <button
-                        onClick={() => handleEditRoles(user)}
-                        className="btn btn-small"
-                      >
-                        Edit Roles
-                      </button>
-                      <button
-                        onClick={() => handleToggleActive(user)}
-                        className={`btn btn-small ${user.isActive ? 'btn-danger' : 'btn-success'}`}
-                      >
-                        {user.isActive ? 'Disable' : 'Enable'}
-                      </button>
+                      {canManageUsers && (
+                        <>
+                          <button
+                            onClick={() => handleEditRoles(user)}
+                            className="btn btn-small"
+                          >
+                            Edit Roles
+                          </button>
+                          <button
+                            onClick={() => handleToggleActive(user)}
+                            className={`btn btn-small ${user.isActive ? 'btn-danger' : 'btn-success'}`}
+                          >
+                            {user.isActive ? 'Disable' : 'Enable'}
+                          </button>
+                        </>
+                      )}
                       {isBeingImpersonated && impersonation && (
                         <button
                           onClick={() => handleForceEndImpersonation(impersonation.id, user.username)}

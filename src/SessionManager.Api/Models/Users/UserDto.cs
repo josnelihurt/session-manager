@@ -11,7 +11,8 @@ public record UserDto(
     bool IsActive,
     DateTime CreatedAt,
     DateTime? LastLoginAt,
-    UserRoleDto[] Roles
+    UserRoleDto[] Roles,
+    bool CanImpersonate
 );
 
 public record UserRoleDto(
