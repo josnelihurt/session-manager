@@ -9,6 +9,7 @@ using SessionManager.Api.Services.Applications;
 using SessionManager.Api.Services.Users;
 using SessionManager.Api.Services.Invitations;
 using SessionManager.Api.Services.Email;
+using SessionManager.Api.Templates;
 using StackExchange.Redis;
 using System.Text.Json;
 
@@ -68,6 +69,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IEmailTemplateService, EmailTemplateService>();
         services.AddScoped<IOtpService, OtpService>();
 
         // Add background services
