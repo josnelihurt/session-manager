@@ -9,6 +9,7 @@ using SessionManager.Api.Services.Applications;
 using SessionManager.Api.Services.Users;
 using SessionManager.Api.Services.Invitations;
 using SessionManager.Api.Services.Email;
+using SessionManager.Api.Services.Impersonation;
 using SessionManager.Api.Templates;
 using StackExchange.Redis;
 using System.Text.Json;
@@ -28,6 +29,7 @@ public static class ServiceCollectionExtensions
         services.Configure<Auth0Options>(configuration.GetSection(Auth0Options.SectionName));
         services.Configure<InvitationOptions>(configuration.GetSection(InvitationOptions.SectionName));
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.Configure<ImpersonationOptions>(configuration.GetSection(ImpersonationOptions.SectionName));
 
         // Add DbContext
         var databaseOptions = configuration.GetSection(DatabaseOptions.SectionName).Get<DatabaseOptions>()
@@ -71,6 +73,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IEmailTemplateService, EmailTemplateService>();
         services.AddScoped<IOtpService, OtpService>();
+        services.AddScoped<IImpersonationService, ImpersonationService>();
 
         // Add background services
         services.AddHostedService<EmailQueueConsumer>();

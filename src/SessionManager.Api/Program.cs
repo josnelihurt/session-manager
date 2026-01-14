@@ -1,5 +1,6 @@
 using SessionManager.Api.Endpoints;
 using SessionManager.Api.Extensions;
+using SessionManager.Api.Middleware;
 using SessionManager.Api.Services.Applications;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,9 @@ var app = builder.Build();
 app.Urls.Add("http://*:8080");
 
 app.UseCors("AllowFrontend");
+
+// Add impersonation audit middleware
+app.UseMiddleware<ImpersonationAuditMiddleware>();
 
 // Seed applications from configuration on startup
 using (var scope = app.Services.CreateScope())

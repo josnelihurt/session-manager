@@ -18,4 +18,7 @@ public interface ISessionService
     // User session management methods
     Task<List<SessionInfo>> GetSessionsByUserAsync(Guid userId);
     Task<int> DeleteUserSessionsAsync(Guid userId);
+
+    // Impersonation methods
+    Task<string> CreateImpersonatedSessionAsync(Guid userId, string username, string email, bool isSuperAdmin, ImpersonatorInfo impersonator, Guid impersonationId, DateTime expiresAt, string ipAddress, string userAgent);
 }

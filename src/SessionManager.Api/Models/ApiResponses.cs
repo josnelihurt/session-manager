@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using SessionManager.Api.Models.Auth;
+using SessionManager.Api.Models.Impersonation;
 
 namespace SessionManager.Api.Models;
 
@@ -19,6 +20,9 @@ public record ApiResponse<T>(bool Success, T? Data = default, string? Message = 
 [JsonSerializable(typeof(ProviderInfo[]))]
 [JsonSerializable(typeof(IEnumerable<ProviderInfo>))]
 [JsonSerializable(typeof(SessionData))]
+[JsonSerializable(typeof(ImpersonationStatusResponse))]
+[JsonSerializable(typeof(ImpersonationSessionDto))]
+[JsonSerializable(typeof(IEnumerable<ImpersonationSessionDto>))]
 internal partial class AppJsonContext : JsonSerializerContext { }
 
 public record SessionsResponse(bool Success, IEnumerable<SessionDto> Data, int Count);

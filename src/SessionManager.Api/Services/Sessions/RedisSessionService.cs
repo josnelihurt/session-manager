@@ -133,6 +133,44 @@ public class RedisSessionService : ISessionService
         return sessionKey;
     }
 
+    public async Task<string> CreateImpersonatedSessionAsync(
+        Guid userId,
+        string username,
+        string email,
+        bool isSuperAdmin,
+        ImpersonatorInfo impersonator,
+        Guid impersonationId,
+        DateTime expiresAt,
+        string ipAddress,
+        string userAgent)
+    {
+        var sessionKey = $"{SessionManagerConstants.RedisSessionPrefix}{Guid.NewGuid():N}";
+        var db = _redis.GetDatabase();
+
+        // Create impersonated session data
+        var sessionData = new SessionData(
+            UserId: userId,
+            Username: username,
+            Email: email,
+            IsSuperAdmin: isSuperAdmin,
+            ExpiresAt: expiresAt,
+            IsImpersonated: true,
+            Impersonator: impersonator,
+            ImpersonationId: impersonationId,
+            ImpersonationExpiresAt: expiresAt
+        );
+
+        var json = JsonSerializer.Serialize(sessionData, AppJsonContext.Default.SessionData);
+        var expiry = expiresAt - DateTime.UtcNow;
+
+        await db.StringSetAsync(sessionKey, json, expiry);
+
+        _logger.LogWarning("Created impersonated session {Session} for user {User} by admin {Admin}",
+            sessionKey, username, impersonator.Username);
+
+        return sessionKey;
+    }
+
     public async Task<SessionData?> GetSessionAsync(string sessionKey)
     {
         var db = _redis.GetDatabase();

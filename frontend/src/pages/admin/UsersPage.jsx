@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { AdminLayout } from '../../components/Layout/AdminLayout'
 import { RoleSelector } from '../../components/RoleSelector'
+import { ImpersonateModal } from '../../components/ImpersonateModal'
+import { useAuth } from '../../contexts/AuthContext'
 import { getAllApplications, assignUserRoles, removeUserRole, setUserActive, deleteUser } from '../../api'
 
 export function UsersPage() {
@@ -10,8 +12,11 @@ export function UsersPage() {
   const [error, setError] = useState('')
   const [selectedUser, setSelectedUser] = useState(null)
   const [showRoleModal, setShowRoleModal] = useState(false)
+  const [showImpersonateModal, setShowImpersonateModal] = useState(false)
+  const [impersonateUser, setImpersonateUser] = useState(null)
   const [selectedUsers, setSelectedUsers] = useState(new Set())
   const [deleting, setDeleting] = useState(false)
+  const { isSuperAdmin } = useAuth()
 
   useEffect(() => {
     loadData()
@@ -44,6 +49,11 @@ export function UsersPage() {
   const handleEditRoles = (user) => {
     setSelectedUser(user)
     setShowRoleModal(true)
+  }
+
+  const handleImpersonate = (user) => {
+    setImpersonateUser(user)
+    setShowImpersonateModal(true)
   }
 
   const handleRoleChange = async (roleId, checked) => {
@@ -104,6 +114,13 @@ export function UsersPage() {
     }
   }
 
+  const canImpersonate = (user) => {
+    if (!isSuperAdmin) return false
+    if (user.isSuperAdmin) return false
+    if (!user.isActive) return false
+    return true
+  }
+
   const nonSuperAdminUsers = users.filter(u => !u.isSuperAdmin)
   const isAllSelected = nonSuperAdminUsers.length > 0 && selectedUsers.size === nonSuperAdminUsers.length
   const isSomeSelected = selectedUsers.size > 0 && !isAllSelected
@@ -157,6 +174,7 @@ export function UsersPage() {
           {users.map((user) => {
             const isSelected = selectedUsers.has(user.id)
             const isSelectable = !user.isSuperAdmin
+            const userCanImpersonate = canImpersonate(user)
 
             return (
               <tr key={user.id} className={isSelected ? 'selected' : ''}>
@@ -215,6 +233,15 @@ export function UsersPage() {
                       >
                         {user.isActive ? 'Disable' : 'Enable'}
                       </button>
+                      {userCanImpersonate && (
+                        <button
+                          onClick={() => handleImpersonate(user)}
+                          className="btn btn-small btn-primary"
+                          title={`View system as ${user.username}`}
+                        >
+                          Impersonate
+                        </button>
+                      )}
                     </>
                   )}
                 </td>
@@ -244,6 +271,16 @@ export function UsersPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {showImpersonateModal && impersonateUser && (
+        <ImpersonateModal
+          user={impersonateUser}
+          onClose={() => {
+            setShowImpersonateModal(false)
+            setImpersonateUser(null)
+          }}
+        />
       )}
     </AdminLayout>
   )

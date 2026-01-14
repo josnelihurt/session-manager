@@ -16,6 +16,8 @@ public class SessionManagerDbContext : DbContext
     public DbSet<AuthProvider> AuthProviders => Set<AuthProvider>();
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<OtpAttempt> OtpAttempts => Set<OtpAttempt>();
+    public DbSet<ImpersonationSession> ImpersonationSessions => Set<ImpersonationSession>();
+    public DbSet<ImpersonationAuditLog> ImpersonationAuditLogs => Set<ImpersonationAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -148,6 +150,49 @@ public class SessionManagerDbContext : DbContext
             entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
             entity.Property(e => e.UsedAt).HasColumnName("used_at");
             entity.HasIndex(e => new { e.Email, e.Code });
+        });
+
+        // ImpersonationSession
+        modelBuilder.Entity<ImpersonationSession>(entity =>
+        {
+            entity.ToTable("impersonation_sessions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ImpersonatorId).HasColumnName("impersonator_id");
+            entity.Property(e => e.ImpersonatorSessionKey).HasColumnName("impersonator_session_key").HasMaxLength(255);
+            entity.Property(e => e.TargetUserId).HasColumnName("target_user_id");
+            entity.Property(e => e.ImpersonatedSessionKey).HasColumnName("impersonated_session_key").HasMaxLength(255);
+            entity.Property(e => e.Reason).HasColumnName("reason").HasMaxLength(500);
+            entity.Property(e => e.IpAddress).HasColumnName("ip_address").HasMaxLength(45);
+            entity.Property(e => e.UserAgent).HasColumnName("user_agent");
+            entity.Property(e => e.StartedAt).HasColumnName("started_at");
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.EndedAt).HasColumnName("ended_at");
+            entity.Property(e => e.EndReason).HasColumnName("end_reason").HasMaxLength(50);
+
+            entity.HasOne(e => e.Impersonator).WithMany().HasForeignKey(e => e.ImpersonatorId);
+            entity.HasOne(e => e.TargetUser).WithMany().HasForeignKey(e => e.TargetUserId);
+        });
+
+        // ImpersonationAuditLog
+        modelBuilder.Entity<ImpersonationAuditLog>(entity =>
+        {
+            entity.ToTable("impersonation_audit_log");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ImpersonationSessionId).HasColumnName("impersonation_session_id");
+            entity.Property(e => e.Action).HasColumnName("action").HasMaxLength(100);
+            entity.Property(e => e.ResourceType).HasColumnName("resource_type").HasMaxLength(100);
+            entity.Property(e => e.ResourceId).HasColumnName("resource_id").HasMaxLength(255);
+            entity.Property(e => e.HttpMethod).HasColumnName("http_method").HasMaxLength(10);
+            entity.Property(e => e.Endpoint).HasColumnName("endpoint").HasMaxLength(500);
+            entity.Property(e => e.RequestBodyHash).HasColumnName("request_body_hash").HasMaxLength(64);
+            entity.Property(e => e.ResponseStatusCode).HasColumnName("response_status_code");
+            entity.Property(e => e.IpAddress).HasColumnName("ip_address").HasMaxLength(45);
+            entity.Property(e => e.UserAgent).HasColumnName("user_agent");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+
+            entity.HasOne(e => e.ImpersonationSession).WithMany(i => i.AuditLogs).HasForeignKey(e => e.ImpersonationSessionId);
         });
     }
 }

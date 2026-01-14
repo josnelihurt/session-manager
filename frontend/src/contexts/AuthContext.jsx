@@ -5,6 +5,7 @@ const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [impersonation, setImpersonation] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -19,6 +20,15 @@ export function AuthProvider({ children }) {
       setUser(null)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const checkImpersonationStatus = async () => {
+    try {
+      const response = await api.get('/impersonate/status')
+      setImpersonation(response.data.data)
+    } catch {
+      setImpersonation(null)
     }
   }
 
@@ -48,15 +58,41 @@ export function AuthProvider({ children }) {
     window.location.href = '/api/auth/logout'
   }
 
+  const startImpersonation = async (userId, reason, durationMinutes = 30) => {
+    const response = await api.post(`/impersonate/${userId}`, {
+      reason,
+      durationMinutes
+    })
+    // After impersonation, reload the page to get the new session
+    if (response.data.success) {
+      window.location.reload()
+    }
+    return response.data
+  }
+
+  const endImpersonation = async () => {
+    const response = await api.delete('/impersonate')
+    // After ending impersonation, reload the page
+    if (response.data.success) {
+      window.location.reload()
+    }
+    return response.data
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
+      impersonation,
       loading,
       login,
       loginWithGoogle,
       loginWithAuth0,
       logout,
+      startImpersonation,
+      endImpersonation,
+      checkImpersonationStatus,
       isSuperAdmin: user?.isSuperAdmin || false,
+      isImpersonating: impersonation?.isImpersonating || false,
     }}>
       {children}
     </AuthContext.Provider>
