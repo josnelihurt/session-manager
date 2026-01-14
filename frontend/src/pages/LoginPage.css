@@ -4,21 +4,11 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 8%;
   background: url('/login.png') center center / cover no-repeat;
   position: relative;
 }
 
-.login-page::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to right, rgba(26, 26, 26, 0.3) 0%, rgba(26, 26, 26, 0.6) 100%);
-  z-index: 0;
-}
+/* Removed dark overlay to show original image colors */
 
 .login-container {
   background: rgba(255, 255, 255, 0.12);
@@ -440,7 +430,6 @@
 @media (max-width: 1024px) {
   .login-page {
     justify-content: center;
-    padding-right: 0;
     padding: 0 1.5rem;
   }
 
