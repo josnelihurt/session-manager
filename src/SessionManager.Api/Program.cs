@@ -1,6 +1,6 @@
 using SessionManager.Api.Endpoints;
 using SessionManager.Api.Extensions;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Applications;
 
 var builder = WebApplication.CreateBuilder(args);
 

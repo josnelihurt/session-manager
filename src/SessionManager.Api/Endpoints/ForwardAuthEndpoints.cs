@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using SessionManager.Api.Configuration;
 using SessionManager.Api.Services.Auth;
 using SessionManager.Api.Services.Sessions;
+using SessionManager.Api.Services;
 
 namespace SessionManager.Api.Endpoints;
 
