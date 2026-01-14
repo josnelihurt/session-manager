@@ -260,16 +260,6 @@ public static class AuthEndpoints
             return Results.Ok(new { message = "Test endpoint works!", timestamp = DateTime.UtcNow });
         });
 
-        // GET /api/debug/hash - Generate BCrypt hash (TEMPORARY)
-        app.MapGet("/api/debug/hash", (string password, IPasswordHasher passwordHasher) =>
-        {
-            if (string.IsNullOrEmpty(password))
-                return Results.Text("password parameter required", statusCode: 400);
-
-            var hash = passwordHasher.HashPassword(password);
-            return Results.Text($"{{ \"password\": \"{password}\", \"hash\": \"{hash}\" }}");
-        });
-
         // GET /api/auth/login/google - Start Google OAuth flow
         app.MapGet("/api/auth/login/google", async (
             [FromQuery] string? invitation,
