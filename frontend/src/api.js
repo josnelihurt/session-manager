@@ -159,3 +159,30 @@ export const resendInvitationEmail = async (id) => {
   const response = await apiClient.post(`/invitations/${id}/resend-email`)
   return response.data
 }
+
+// ==================== IMPERSONATION API ====================
+
+export const getImpersonationStatus = async () => {
+  const response = await apiClient.get('/impersonate/status')
+  return response.data
+}
+
+export const startImpersonation = async (userId, reason, durationMinutes = 30) => {
+  const response = await apiClient.post(`/impersonate/${userId}`, { reason, durationMinutes })
+  return response.data
+}
+
+export const endImpersonation = async () => {
+  const response = await apiClient.delete('/impersonate')
+  return response.data
+}
+
+export const getActiveImpersonationSessions = async () => {
+  const response = await apiClient.get('/impersonate/sessions')
+  return response.data
+}
+
+export const forceEndImpersonationSession = async (sessionId) => {
+  const response = await apiClient.delete(`/impersonate/sessions/${sessionId}`)
+  return response.data
+}

@@ -3,7 +3,7 @@ import { AdminLayout } from '../../components/Layout/AdminLayout'
 import { RoleSelector } from '../../components/RoleSelector'
 import { ImpersonateModal } from '../../components/ImpersonateModal'
 import { useAuth } from '../../contexts/AuthContext'
-import { getAllApplications, assignUserRoles, removeUserRole, setUserActive, deleteUser } from '../../api'
+import { getAllApplications, assignUserRoles, removeUserRole, setUserActive, deleteUser, getActiveImpersonationSessions, forceEndImpersonationSession } from '../../api'
 
 export function UsersPage() {
   const [users, setUsers] = useState([])
@@ -16,6 +16,8 @@ export function UsersPage() {
   const [impersonateUser, setImpersonateUser] = useState(null)
   const [selectedUsers, setSelectedUsers] = useState(new Set())
   const [deleting, setDeleting] = useState(false)
+  const [activeImpersonations, setActiveImpersonations] = useState([])
+  const [loadingImpersonations, setLoadingImpersonations] = useState(false)
   const { isSuperAdmin } = useAuth()
 
   useEffect(() => {
@@ -30,10 +32,27 @@ export function UsersPage() {
       ])
       setUsers(usersData)
       setApplications(appsData)
+
+      // Load active impersonations for super admins
+      if (isSuperAdmin) {
+        loadImpersonations()
+      }
     } catch (err) {
       setError('Failed to load data')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadImpersonations = async () => {
+    setLoadingImpersonations(true)
+    try {
+      const sessions = await getActiveImpersonationSessions()
+      setActiveImpersonations(sessions.data || sessions || [])
+    } catch (err) {
+      console.error('Failed to load impersonations:', err)
+    } finally {
+      setLoadingImpersonations(false)
     }
   }
 
@@ -114,11 +133,33 @@ export function UsersPage() {
     }
   }
 
+  const handleForceEndImpersonation = async (sessionId, targetUsername) => {
+    if (!confirm(`End impersonation of ${targetUsername}? This will terminate their impersonated session.`)) return
+
+    try {
+      await forceEndImpersonationSession(sessionId)
+      await loadImpersonations()
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to end impersonation')
+    }
+  }
+
   const canImpersonate = (user) => {
     if (!isSuperAdmin) return false
     if (user.isSuperAdmin) return false
     if (!user.isActive) return false
+    // Check if user is already being impersonated
+    if (isUserBeingImpersonated(user.id)) return false
     return true
+  }
+
+  const isUserBeingImpersonated = (userId) => {
+    return activeImpersonations.some(imp => imp.targetUsername && users.find(u => u.id === userId)?.username === imp.targetUsername)
+  }
+
+  const getUserImpersonation = (userId) => {
+    const user = users.find(u => u.id === userId)
+    return activeImpersonations.find(imp => imp.targetUsername === user?.username)
   }
 
   const nonSuperAdminUsers = users.filter(u => !u.isSuperAdmin)
@@ -175,9 +216,11 @@ export function UsersPage() {
             const isSelected = selectedUsers.has(user.id)
             const isSelectable = !user.isSuperAdmin
             const userCanImpersonate = canImpersonate(user)
+            const impersonation = getUserImpersonation(user.id)
+            const isBeingImpersonated = !!impersonation
 
             return (
-              <tr key={user.id} className={isSelected ? 'selected' : ''}>
+              <tr key={user.id} className={`${isSelected ? 'selected' : ''} ${isBeingImpersonated ? 'impersonated-row' : ''}`}>
                 <td>
                   {isSelectable ? (
                     <input
@@ -192,6 +235,11 @@ export function UsersPage() {
                 <td>
                   {user.username}
                   {user.isSuperAdmin && <span className="badge">Super Admin</span>}
+                  {isBeingImpersonated && (
+                    <div className="impersonation-badge">
+                      👤 Impersonated by {impersonation.impersonatorUsername}
+                    </div>
+                  )}
                 </td>
                 <td>{user.email}</td>
                 <td>{user.provider}</td>
@@ -217,6 +265,11 @@ export function UsersPage() {
                   {user.lastLoginAt
                     ? new Date(user.lastLoginAt).toLocaleDateString()
                     : 'Never'}
+                  {isBeingImpersonated && (
+                    <div className="impersonation-time">
+                      Expires: {impersonation.remainingMinutes}m
+                    </div>
+                  )}
                 </td>
                 <td className="actions">
                   {!user.isSuperAdmin && (
@@ -233,6 +286,15 @@ export function UsersPage() {
                       >
                         {user.isActive ? 'Disable' : 'Enable'}
                       </button>
+                      {isBeingImpersonated && impersonation && (
+                        <button
+                          onClick={() => handleForceEndImpersonation(impersonation.id, user.username)}
+                          className="btn btn-small btn-warning"
+                          title={`End impersonation by ${impersonation.impersonatorUsername}`}
+                        >
+                          End Impersonation
+                        </button>
+                      )}
                       {userCanImpersonate && (
                         <button
                           onClick={() => handleImpersonate(user)}
