@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -6,6 +7,7 @@ using Moq;
 using SessionManager.Api.Configuration;
 using SessionManager.Api.Controllers;
 using SessionManager.Api.Models;
+using SessionManager.Api.Models.Auth;
 using SessionManager.Api.Services;
 using Xunit;
 
@@ -49,6 +51,15 @@ public class SessionsControllerTests
         };
         _sessionServiceMock.Setup(s => s.GetAllSessionsAsync()).ReturnsAsync(sessions);
 
+        // Mock super admin user
+        var userInfo = new UserInfo(testUserId, "testuser", "test@example.com", true, "local");
+        _authServiceMock.Setup(s => s.GetCurrentUserAsync(It.IsAny<string>())).ReturnsAsync(userInfo);
+
+        // Set up controller context with cookies
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers["Cookie"] = "_session_manager=fake-session-key";
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
         // Act
         var result = await _controller.GetSessions();
 
@@ -67,6 +78,16 @@ public class SessionsControllerTests
     {
         // Arrange
         _sessionServiceMock.Setup(s => s.GetAllSessionsAsync()).ReturnsAsync(new List<SessionInfo>());
+
+        // Mock super admin user
+        var testUserId = Guid.NewGuid();
+        var userInfo = new UserInfo(testUserId, "testuser", "test@example.com", true, "local");
+        _authServiceMock.Setup(s => s.GetCurrentUserAsync(It.IsAny<string>())).ReturnsAsync(userInfo);
+
+        // Set up controller context with cookies
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers["Cookie"] = "_session_manager=fake-session-key";
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
         // Act
         var result = await _controller.GetSessions();

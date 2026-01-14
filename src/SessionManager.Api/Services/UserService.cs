@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SessionManager.Api.Data;
 using SessionManager.Api.Entities;
+using SessionManager.Api.Mappers;
 using SessionManager.Api.Models.Users;
 
 namespace SessionManager.Api.Services;
@@ -33,7 +34,7 @@ public class UserService : IUserService
             .OrderBy(u => u.Username)
             .ToListAsync();
 
-        return users.Select(MapToDto);
+        return UserMapper.ToDto(users);
     }
 
     public async Task<UserDto?> GetByIdAsync(Guid id)
@@ -44,7 +45,7 @@ public class UserService : IUserService
                     .ThenInclude(r => r.Application)
             .FirstOrDefaultAsync(u => u.Id == id);
 
-        return user != null ? MapToDto(user) : null;
+        return user != null ? UserMapper.ToDto(user) : null;
     }
 
     public async Task<UserDto?> GetByEmailAsync(string email)
@@ -55,7 +56,7 @@ public class UserService : IUserService
                     .ThenInclude(r => r.Application)
             .FirstOrDefaultAsync(u => u.Email == email);
 
-        return user != null ? MapToDto(user) : null;
+        return user != null ? UserMapper.ToDto(user) : null;
     }
 
     public async Task<bool> AssignRolesAsync(Guid userId, Guid[] roleIds)
@@ -200,27 +201,5 @@ public class UserService : IUserService
         }
 
         return true;
-    }
-
-    private static UserDto MapToDto(User user)
-    {
-        return new UserDto(
-            Id: user.Id,
-            Username: user.Username,
-            Email: user.Email,
-            Provider: user.Provider,
-            IsSuperAdmin: user.IsSuperAdmin,
-            IsActive: user.IsActive,
-            CreatedAt: user.CreatedAt,
-            LastLoginAt: user.LastLoginAt,
-            Roles: user.UserRoles
-                .Select(ur => new UserRoleDto(
-                    RoleId: ur.RoleId,
-                    RoleName: ur.Role.Name,
-                    ApplicationName: ur.Role.Application.Name,
-                    ApplicationUrl: ur.Role.Application.Url
-                ))
-                .ToArray()
-        );
     }
 }

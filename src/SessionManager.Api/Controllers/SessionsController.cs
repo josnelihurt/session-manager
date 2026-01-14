@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SessionManager.Api.Configuration;
+using SessionManager.Api.Mappers;
 using SessionManager.Api.Models;
 using SessionManager.Api.Models.Auth;
 using SessionManager.Api.Services;
@@ -69,17 +70,7 @@ public class SessionsController : ControllerBase
                 sessions = Enumerable.Empty<SessionInfo>();
             }
 
-            var sessionDtos = sessions.Select(s => new SessionDto(
-                s.SessionId,
-                s.CookiePrefix,
-                s.TtlMilliseconds,
-                s.ExpiresAt?.ToString("o"),
-                FormatRemainingTime(s.TtlMilliseconds),
-                s.FullKey,
-                s.UserId?.ToString("N"),
-                s.Username,
-                s.Email
-            ));
+            var sessionDtos = SessionMapper.ToDto(sessions);
 
             return Ok(new SessionsResponse(true, sessionDtos, sessions.Count()));
         }
@@ -132,19 +123,5 @@ public class SessionsController : ControllerBase
             _logger.LogError(ex, "Error deleting all sessions");
             return StatusCode(500, new ApiResponse<object>(false, Error: "Failed to delete sessions"));
         }
-    }
-
-    private static string FormatRemainingTime(long ttlMs)
-    {
-        if (ttlMs < 0)
-            return "Expired";
-
-        var timeSpan = TimeSpan.FromMilliseconds(ttlMs);
-
-        if (timeSpan.TotalHours >= 1)
-            return $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m";
-        if (timeSpan.TotalMinutes >= 1)
-            return $"{timeSpan.Minutes}m {timeSpan.Seconds}s";
-        return $"{timeSpan.Seconds}s";
     }
 }

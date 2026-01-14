@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using SessionManager.Api.Data;
 using SessionManager.Api.Entities;
+using SessionManager.Api.Mappers;
 using SessionManager.Api.Models.Applications;
 
 namespace SessionManager.Api.Services;
@@ -26,7 +27,7 @@ public class ApplicationService : IApplicationService
             .OrderBy(a => a.Name)
             .ToListAsync();
 
-        return apps.Select(MapToDto);
+        return ApplicationMapper.ToDto(apps);
     }
 
     public async Task<IEnumerable<ApplicationDto>> GetUserApplicationsAsync(Guid userId)
@@ -43,7 +44,7 @@ public class ApplicationService : IApplicationService
                 .OrderBy(a => a.Name)
                 .ToListAsync();
 
-            return allApps.Select(MapToDto);
+            return ApplicationMapper.ToDto(allApps);
         }
 
         // Regular users get only applications they have roles for
@@ -61,7 +62,7 @@ public class ApplicationService : IApplicationService
             .OrderBy(a => a.Name)
             .ToListAsync();
 
-        return apps.Select(MapToDto);
+        return ApplicationMapper.ToDto(apps);
     }
 
     public async Task<ApplicationDto?> GetByIdAsync(Guid id)
@@ -70,7 +71,7 @@ public class ApplicationService : IApplicationService
             .Include(a => a.Roles)
             .FirstOrDefaultAsync(a => a.Id == id);
 
-        return app != null ? MapToDto(app) : null;
+        return app != null ? ApplicationMapper.ToDto(app) : null;
     }
 
     public async Task<ApplicationDto?> GetByUrlAsync(string url)
@@ -79,7 +80,7 @@ public class ApplicationService : IApplicationService
             .Include(a => a.Roles)
             .FirstOrDefaultAsync(a => a.Url == url);
 
-        return app != null ? MapToDto(app) : null;
+        return app != null ? ApplicationMapper.ToDto(app) : null;
     }
 
     public async Task<ApplicationDto> CreateAsync(CreateApplicationRequest request)
@@ -158,7 +159,7 @@ public class ApplicationService : IApplicationService
         _dbContext.Roles.Add(role);
         await _dbContext.SaveChangesAsync();
 
-        return MapRoleToDto(role);
+        return RoleMapper.ToDto(role);
     }
 
     public async Task<bool> DeleteRoleAsync(Guid roleId)
@@ -225,32 +226,5 @@ public class ApplicationService : IApplicationService
         };
 
         return JsonSerializer.Serialize(permissions);
-    }
-
-    private static ApplicationDto MapToDto(Application app)
-    {
-        return new ApplicationDto(
-            Id: app.Id,
-            Url: app.Url,
-            Name: app.Name,
-            Description: app.Description,
-            IsActive: app.IsActive,
-            Roles: app.Roles.Select(MapRoleToDto).ToArray()
-        );
-    }
-
-    private static RoleDto MapRoleToDto(Role role)
-    {
-        var permissions = string.IsNullOrEmpty(role.PermissionsJson)
-            ? new Dictionary<string, bool>()
-            : JsonSerializer.Deserialize<Dictionary<string, bool>>(role.PermissionsJson)
-              ?? new Dictionary<string, bool>();
-
-        return new RoleDto(
-            Id: role.Id,
-            ApplicationId: role.ApplicationId,
-            Name: role.Name,
-            Permissions: permissions
-        );
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using SessionManager.Api.Configuration;
 using SessionManager.Api.Data;
 using SessionManager.Api.Entities;
+using SessionManager.Api.Mappers;
 using SessionManager.Api.Models.Invitations;
 
 namespace SessionManager.Api.Services;
@@ -30,7 +31,7 @@ public class InvitationService : IInvitationService
             .OrderByDescending(i => i.CreatedAt)
             .ToListAsync();
 
-        return invitations.Select(MapToDto);
+        return InvitationMapper.ToDto(invitations);
     }
 
     public async Task<InvitationDto?> CreateAsync(CreateInvitationRequest request, Guid createdByUserId)
@@ -87,7 +88,7 @@ public class InvitationService : IInvitationService
             .Include(i => i.CreatedBy)
             .FirstOrDefaultAsync(i => i.Token == token);
 
-        return invitation != null ? MapToDto(invitation) : null;
+        return invitation != null ? InvitationMapper.ToDto(invitation) : null;
     }
 
     public async Task<bool> MarkAsUsedAsync(Guid id, Guid usedById)
@@ -111,23 +112,6 @@ public class InvitationService : IInvitationService
             .Include(i => i.CreatedBy)
             .FirstOrDefaultAsync(i => i.Id == id);
 
-        return invitation != null ? MapToDto(invitation) : null;
-    }
-
-    private static InvitationDto MapToDto(Invitation invitation)
-    {
-        var baseUrl = "https://session-manager.lab.josnelihurt.me";
-        return new InvitationDto(
-            Id: invitation.Id,
-            Token: invitation.Token,
-            Email: invitation.Email,
-            Provider: invitation.Provider,
-            PreAssignedRoles: invitation.PreAssignedRoles?.Select(r => r.ToString()).ToArray() ?? Array.Empty<string>(),
-            CreatedAt: invitation.CreatedAt,
-            ExpiresAt: invitation.ExpiresAt,
-            UsedAt: invitation.UsedAt,
-            IsUsed: invitation.UsedAt != null,
-            InviteUrl: $"{baseUrl}/register?token={invitation.Token}"
-        );
+        return invitation != null ? InvitationMapper.ToDto(invitation) : null;
     }
 }
