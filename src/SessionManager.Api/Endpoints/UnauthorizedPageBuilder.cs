@@ -2,8 +2,35 @@ namespace SessionManager.Api.Endpoints;
 
 public static class UnauthorizedPageBuilder
 {
+    private static readonly string[] UnauthorizedMessages =
+    [
+        "The magical gatekeeper requests thy presence.",
+        "The enchanted scroll of authentication is missing.",
+        "The wizard's crystal ball shows no record of thee.",
+        "The guardian of the realm demands identification.",
+        "The mystical seal blocks thy path.",
+        "The ancient rune reads: 'Who goes there?'",
+        "The castle sentry knows thee not.",
+        "The alchemist's potion of 'login' must be consumed first.",
+        "The fairy whispers: 'Sign in to proceed.'",
+        "The enchanted mirror shows only those logged in may enter.",
+        "The royal decree requires authentication.",
+        "The dungeon master says: 'Thou hast not logged in yet.'",
+        "The magical wards require a session key.",
+        "The herald announces: 'Unknown traveler detected.'",
+        "The sorcerer's scry shows no valid credentials.",
+        "The bridge keeper asks: 'What is your password?'",
+        "The mystical portal is sealed.",
+        "The oracle whispers: 'Login first, mortal.'",
+        "The enchanted forest requires a guide.",
+        "The Book of Entry says: 'Authentication required.'"
+    ];
+
     public static string BuildUnauthorizedPage()
     {
+        var random = new Random();
+        var messageIndex = random.Next(UnauthorizedMessages.Length);
+
         return $@"
 <!DOCTYPE html>
 <html lang='en'>
@@ -19,14 +46,17 @@ public static class UnauthorizedPageBuilder
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #e4e4e4;
+            justify-content: flex-end;
+            background-image: url('https://session-manager.lab.josnelihurt.me/api/static/403.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             padding: 2rem;
+            padding-bottom: 4rem;
         }}
         .content {{
             text-align: center;
-            max-width: 500px;
+            max-width: 600px;
         }}
         h1 {{
             font-size: 3rem;
@@ -37,10 +67,12 @@ public static class UnauthorizedPageBuilder
             margin-bottom: 1.5rem;
         }}
         .message {{
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             line-height: 1.6;
-            color: #e4e4e4;
+            color: #fff;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.9);
             margin-bottom: 2rem;
+            font-style: italic;
         }}
         .btn {{
             display: inline-block;
@@ -64,7 +96,7 @@ public static class UnauthorizedPageBuilder
 <body>
     <div class='content'>
         <h1>401 - Unauthorized</h1>
-        <p class='message'>You need to log in to access this application.</p>
+        <p class='message'>{UnauthorizedMessages[messageIndex]}</p>
         <a href='https://session-manager.lab.josnelihurt.me/' class='btn'>Go to Login</a>
     </div>
 </body>
