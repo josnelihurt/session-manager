@@ -1,6 +1,6 @@
 using SessionManager.Api.Models.Auth;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Auth;
 
 public interface IAuthService
 {

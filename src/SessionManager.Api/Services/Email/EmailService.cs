@@ -5,7 +5,7 @@ using SessionManager.Api.Configuration;
 using SessionManager.Api.Models.Invitations;
 using System.Text;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Email;
 
 public class EmailService : IEmailService
 {

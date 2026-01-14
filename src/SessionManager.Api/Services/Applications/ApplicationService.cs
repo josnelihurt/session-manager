@@ -6,7 +6,7 @@ using SessionManager.Api.Entities;
 using SessionManager.Api.Mappers;
 using SessionManager.Api.Models.Applications;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Applications;
 
 public class ApplicationService : IApplicationService
 {

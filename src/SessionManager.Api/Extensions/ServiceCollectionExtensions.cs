@@ -3,7 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SessionManager.Api.Configuration;
 using SessionManager.Api.Data;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Auth;
+using SessionManager.Api.Services.Sessions;
+using SessionManager.Api.Services.Applications;
+using SessionManager.Api.Services.Users;
+using SessionManager.Api.Services.Invitations;
+using SessionManager.Api.Services.Email;
 using StackExchange.Redis;
 using System.Text.Json;
 

@@ -1,6 +1,6 @@
 using SessionManager.Api.Models.Users;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Users;
 
 public interface IUserService
 {

@@ -4,7 +4,8 @@ using SessionManager.Api.Configuration;
 using SessionManager.Api.Mappers;
 using SessionManager.Api.Models;
 using SessionManager.Api.Models.Auth;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Sessions;
+using SessionManager.Api.Services.Auth;
 
 namespace SessionManager.Api.Controllers;
 

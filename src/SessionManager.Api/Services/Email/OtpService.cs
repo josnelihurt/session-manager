@@ -3,7 +3,7 @@ using SessionManager.Api.Data;
 using SessionManager.Api.Models.Emails;
 using StackExchange.Redis;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Email;
 
 public class OtpService : IOtpService
 {

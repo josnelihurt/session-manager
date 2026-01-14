@@ -5,7 +5,9 @@ using SessionManager.Api.Configuration;
 using SessionManager.Api.Data;
 using SessionManager.Api.Entities;
 using SessionManager.Api.Models.Auth;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Auth;
+using SessionManager.Api.Services.Invitations;
+using SessionManager.Api.Services.Sessions;
 using System.Security.Cryptography;
 
 namespace SessionManager.Api.Endpoints;

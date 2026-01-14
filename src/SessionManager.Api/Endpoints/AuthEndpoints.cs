@@ -6,7 +6,10 @@ using SessionManager.Api.Data;
 using SessionManager.Api.Entities;
 using SessionManager.Api.Models;
 using SessionManager.Api.Models.Auth;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Auth;
+using SessionManager.Api.Services.Email;
+using SessionManager.Api.Services.Sessions;
+using SessionManager.Api.Services.Invitations;
 using System.Text.Json;
 
 namespace SessionManager.Api.Endpoints;

@@ -1,6 +1,6 @@
 using SessionManager.Api.Models.Invitations;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Invitations;
 
 public interface IInvitationService
 {

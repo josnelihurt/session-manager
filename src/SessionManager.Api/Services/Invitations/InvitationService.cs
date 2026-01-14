@@ -6,7 +6,7 @@ using SessionManager.Api.Entities;
 using SessionManager.Api.Mappers;
 using SessionManager.Api.Models.Invitations;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Invitations;
 
 public class InvitationService : IInvitationService
 {

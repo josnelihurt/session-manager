@@ -5,7 +5,7 @@ using SessionManager.Api.Models.Auth;
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Sessions;
 
 public class RedisSessionService : ISessionService
 {

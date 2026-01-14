@@ -3,8 +3,10 @@ using SessionManager.Api.Data;
 using SessionManager.Api.Entities;
 using SessionManager.Api.Mappers;
 using SessionManager.Api.Models.Users;
+using SessionManager.Api.Services.Sessions;
+using SessionManager.Api.Services.Auth;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Users;
 
 public class UserService : IUserService
 {

@@ -1,4 +1,4 @@
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Auth;
 
 public class BCryptPasswordHasher : IPasswordHasher
 {

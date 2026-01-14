@@ -4,8 +4,10 @@ using SessionManager.Api.Data;
 using SessionManager.Api.Models.Auth;
 using SessionManager.Api.Entities;
 using SessionManager.Api.Models.Invitations;
+using SessionManager.Api.Services.Sessions;
+using SessionManager.Api.Services.Invitations;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Auth;
 
 public class AuthService : IAuthService
 {

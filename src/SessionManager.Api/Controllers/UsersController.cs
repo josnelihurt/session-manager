@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SessionManager.Api.Models.Users;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Users;
 
 namespace SessionManager.Api.Controllers;
 

@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SessionManager.Api.Configuration;
 using SessionManager.Api.Models.Applications;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Applications;
+using SessionManager.Api.Services.Auth;
 using System.Text.Json;
 
 namespace SessionManager.Api.Controllers;

@@ -3,7 +3,7 @@ using SessionManager.Api.Configuration;
 using SessionManager.Api.Models.Emails;
 using StackExchange.Redis;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Email;
 
 public class EmailQueueConsumer : BackgroundService
 {

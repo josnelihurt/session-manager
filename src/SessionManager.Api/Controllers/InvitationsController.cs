@@ -3,7 +3,9 @@ using Microsoft.Extensions.Options;
 using SessionManager.Api.Configuration;
 using SessionManager.Api.Models.Emails;
 using SessionManager.Api.Models.Invitations;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Invitations;
+using SessionManager.Api.Services.Auth;
+using SessionManager.Api.Services.Applications;
 using StackExchange.Redis;
 
 namespace SessionManager.Api.Controllers;

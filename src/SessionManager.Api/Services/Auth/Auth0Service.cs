@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using SessionManager.Api.Configuration;
 using SessionManager.Api.Models.Auth;
 
-namespace SessionManager.Api.Services;
+namespace SessionManager.Api.Services.Auth;
 
 public class Auth0Service : IAuth0Service
 {
