@@ -1,4 +1,4 @@
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Auth;
 using Xunit;
 using FluentAssertions;
 

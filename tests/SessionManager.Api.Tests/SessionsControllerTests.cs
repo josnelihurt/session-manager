@@ -8,7 +8,8 @@ using SessionManager.Api.Configuration;
 using SessionManager.Api.Controllers;
 using SessionManager.Api.Models;
 using SessionManager.Api.Models.Auth;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Sessions;
+using SessionManager.Api.Services.Auth;
 using Xunit;
 
 namespace SessionManager.Api.Tests;

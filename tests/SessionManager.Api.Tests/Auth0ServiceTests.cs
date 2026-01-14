@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using SessionManager.Api.Configuration;
-using SessionManager.Api.Services;
+using SessionManager.Api.Services.Auth;
 using Xunit;
 using FluentAssertions;
 
