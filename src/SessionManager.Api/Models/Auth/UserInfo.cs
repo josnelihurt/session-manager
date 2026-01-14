@@ -5,7 +5,8 @@ public record UserInfo(
     string Username,
     string Email,
     bool IsSuperAdmin,
-    string Provider
+    string Provider,
+    bool CanImpersonate = false
 );
 
 public record LoginSuccessResponse(UserInfo User);

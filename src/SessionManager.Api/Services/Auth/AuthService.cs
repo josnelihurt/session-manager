@@ -31,6 +31,19 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
+    private bool CalculateCanImpersonate(User user)
+    {
+        // Super Admins always have impersonation permission
+        if (user.IsSuperAdmin) return true;
+
+        // Check if user has impersonate permission in any role
+        return _dbContext.Entry(user)
+            .Collection(u => u.UserRoles)
+            .Query()
+            .Any(ur => ur.Role.PermissionsJson != null &&
+                      ur.Role.PermissionsJson.Contains("\"impersonate\":true"));
+    }
+
     public async Task<LoginResponse> LoginAsync(LoginRequest request, string ipAddress, string userAgent)
     {
         var user = await _dbContext.Users
@@ -58,8 +71,11 @@ public class AuthService : IAuthService
         user.LastLoginAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync();
 
+        // Calculate impersonation permission
+        bool canImpersonate = CalculateCanImpersonate(user);
+
         // Create session
-        var sessionKey = await _sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, ipAddress, userAgent);
+        var sessionKey = await _sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, canImpersonate, ipAddress, userAgent);
 
         _logger.LogInformation("User {Username} logged in successfully", user.Username);
 
@@ -71,7 +87,8 @@ public class AuthService : IAuthService
                 Username: user.Username,
                 Email: user.Email,
                 IsSuperAdmin: user.IsSuperAdmin,
-                Provider: user.Provider
+                Provider: user.Provider,
+                CanImpersonate: canImpersonate
             )
         );
     }
@@ -99,6 +116,8 @@ public class AuthService : IAuthService
             return null;
         }
 
+        bool canImpersonate = CalculateCanImpersonate(user);
+
         _logger.LogInformation("Credentials validated for user {Username}", username);
 
         return new UserInfo(
@@ -106,7 +125,8 @@ public class AuthService : IAuthService
             Username: user.Username,
             Email: user.Email,
             IsSuperAdmin: user.IsSuperAdmin,
-            Provider: user.Provider
+            Provider: user.Provider,
+            CanImpersonate: canImpersonate
         );
     }
 
@@ -129,8 +149,11 @@ public class AuthService : IAuthService
         user.LastLoginAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync();
 
+        // Calculate impersonation permission
+        bool canImpersonate = CalculateCanImpersonate(user);
+
         // Create session
-        var sessionKey = await _sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, ipAddress, userAgent);
+        var sessionKey = await _sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, canImpersonate, ipAddress, userAgent);
 
         _logger.LogInformation("Session created for user {Username}", user.Username);
 
@@ -142,7 +165,8 @@ public class AuthService : IAuthService
                 Username: user.Username,
                 Email: user.Email,
                 IsSuperAdmin: user.IsSuperAdmin,
-                Provider: user.Provider
+                Provider: user.Provider,
+                CanImpersonate: canImpersonate
             )
         );
     }
@@ -233,7 +257,7 @@ public class AuthService : IAuthService
         }
 
         // Create session
-        var sessionKey = await _sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, ipAddress, userAgent);
+        var sessionKey = await _sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, false, ipAddress, userAgent);
 
         _logger.LogInformation("User {Username} registered and logged in successfully", user.Username);
 
@@ -245,7 +269,8 @@ public class AuthService : IAuthService
                 Username: user.Username,
                 Email: user.Email,
                 IsSuperAdmin: user.IsSuperAdmin,
-                Provider: user.Provider
+                Provider: user.Provider,
+                CanImpersonate: false
             )
         );
     }
@@ -265,7 +290,8 @@ public class AuthService : IAuthService
             Username: session.Username,
             Email: session.Email,
             IsSuperAdmin: session.IsSuperAdmin,
-            Provider: "session" // From session, not direct DB lookup
+            Provider: "session", // From session, not direct DB lookup
+            CanImpersonate: session.CanImpersonate
         );
     }
 

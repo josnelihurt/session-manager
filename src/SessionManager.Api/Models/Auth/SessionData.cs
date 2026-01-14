@@ -6,6 +6,7 @@ public record SessionData(
     string Email,
     bool IsSuperAdmin,
     DateTime ExpiresAt,
+    bool CanImpersonate = false,
     // Impersonation fields
     bool IsImpersonated = false,
     ImpersonatorInfo? Impersonator = null,

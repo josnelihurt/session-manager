@@ -11,7 +11,7 @@ public interface ISessionService
     Task<int> DeleteAllSessionsAsync();
 
     // New session-manager methods
-    Task<string> CreateSessionAsync(Guid userId, string username, string email, bool isSuperAdmin, string ipAddress, string userAgent);
+    Task<string> CreateSessionAsync(Guid userId, string username, string email, bool isSuperAdmin, bool canImpersonate, string ipAddress, string userAgent);
     Task<SessionData?> GetSessionAsync(string sessionKey);
     Task<bool> InvalidateSessionAsync(string sessionKey);
 

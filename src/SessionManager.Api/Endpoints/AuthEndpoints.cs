@@ -399,8 +399,16 @@ public static class AuthEndpoints
             user.LastLoginAt = DateTime.UtcNow;
             await dbContext.SaveChangesAsync();
 
+            // Calculate impersonation permission (Super Admins always have it)
+            bool canImpersonate = user.IsSuperAdmin ||
+                await dbContext.UserRoles
+                    .Include(ur => ur.Role)
+                    .AnyAsync(ur => ur.UserId == user.Id &&
+                                  ur.Role.PermissionsJson != null &&
+                                  ur.Role.PermissionsJson.Contains("\"impersonate\":true"));
+
             // Create session
-            var sessionKey = await sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, ipAddress, userAgent);
+            var sessionKey = await sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, canImpersonate, ipAddress, userAgent);
 
             // Set session cookie
             httpRequest.HttpContext.Response.Cookies.Append(SessionManagerConstants.SessionCookieName, sessionKey, new CookieOptions

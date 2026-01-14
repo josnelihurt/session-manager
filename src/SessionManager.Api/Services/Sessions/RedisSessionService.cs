@@ -109,7 +109,7 @@ public class RedisSessionService : ISessionService
         return count;
     }
 
-    public async Task<string> CreateSessionAsync(Guid userId, string username, string email, bool isSuperAdmin, string ipAddress, string userAgent)
+    public async Task<string> CreateSessionAsync(Guid userId, string username, string email, bool isSuperAdmin, bool canImpersonate, string ipAddress, string userAgent)
     {
         var sessionKey = $"{SessionManagerConstants.RedisSessionPrefix}{Guid.NewGuid():N}";
         var db = _redis.GetDatabase();
@@ -120,7 +120,8 @@ public class RedisSessionService : ISessionService
             Username: username,
             Email: email,
             IsSuperAdmin: isSuperAdmin,
-            ExpiresAt: DateTime.UtcNow.AddHours(4)
+            ExpiresAt: DateTime.UtcNow.AddHours(4),
+            CanImpersonate: canImpersonate
         );
 
         var json = JsonSerializer.Serialize(sessionData, AppJsonContext.Default.SessionData);
@@ -147,13 +148,14 @@ public class RedisSessionService : ISessionService
         var sessionKey = $"{SessionManagerConstants.RedisSessionPrefix}{Guid.NewGuid():N}";
         var db = _redis.GetDatabase();
 
-        // Create impersonated session data
+        // Create impersonated session data (impersonated users cannot impersonate others)
         var sessionData = new SessionData(
             UserId: userId,
             Username: username,
             Email: email,
             IsSuperAdmin: isSuperAdmin,
             ExpiresAt: expiresAt,
+            CanImpersonate: false,
             IsImpersonated: true,
             Impersonator: impersonator,
             ImpersonationId: impersonationId,
