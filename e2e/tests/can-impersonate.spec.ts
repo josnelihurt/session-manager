@@ -127,7 +127,11 @@ test.describe('Can Impersonate Permission - E2E', () => {
 
     // Wait for the API call to complete and state to update
     // The checkbox update is asynchronous, so we need to wait for the change to reflect
-    await page.waitForTimeout(500);
+    // Wait for the checkbox to become checked
+    await expect(async () => {
+      const checked = await canImpersonateCheckbox.isChecked();
+      expect(checked).toBe(true);
+    }).toPass({ timeout: 5000 });
 
     // Verify the checkbox is now checked
     const newState = await canImpersonateCheckbox.isChecked();
