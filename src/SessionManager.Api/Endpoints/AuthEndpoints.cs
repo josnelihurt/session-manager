@@ -400,12 +400,7 @@ public static class AuthEndpoints
             await dbContext.SaveChangesAsync();
 
             // Calculate impersonation permission (Super Admins always have it)
-            bool canImpersonate = user.IsSuperAdmin ||
-                await dbContext.UserRoles
-                    .Include(ur => ur.Role)
-                    .AnyAsync(ur => ur.UserId == user.Id &&
-                                  ur.Role.PermissionsJson != null &&
-                                  ur.Role.PermissionsJson.Contains("\"impersonate\":true"));
+            bool canImpersonate = user.IsSuperAdmin || user.CanImpersonate;
 
             // Create session
             var sessionKey = await sessionService.CreateSessionAsync(user.Id, user.Username, user.Email, user.IsSuperAdmin, canImpersonate, ipAddress, userAgent);

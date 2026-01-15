@@ -9,6 +9,7 @@ services:
     networks:
       - session-manager-internal
       - database-internal
+      - iot-internal
       - public-wan
     environment:
       - TZ=${TZ}
@@ -28,15 +29,27 @@ services:
       - Google__ClientId=${Google__ClientId}
       - Google__ClientSecret=${Google__ClientSecret}
       - Google__RedirectUri=${Google__RedirectUri}
+      # Auth0
+      - Auth0__Domain=${Auth0__Domain}
+      - Auth0__ClientId=${Auth0__ClientId}
+      - Auth0__ClientSecret=${Auth0__ClientSecret}
+      - Auth0__CallbackUrl=${Auth0__CallbackUrl}
+      - Auth0__ManagementApiClientId=${Auth0__ManagementApiClientId}
+      - Auth0__ManagementApiClientSecret=${Auth0__ManagementApiClientSecret}
+      - Auth0__ManagementApiIdentifier=${Auth0__ManagementApiIdentifier}
       # CORS
       - Cors__FrontendUrl=${Cors__FrontendUrl}
       # Allowed Applications
       - AllowedApplications=${AllowedApplications}
+      # Skip-Auth Paths
+      - SkipAuthPaths=${SkipAuthPaths}
       # Email
       - Email__From=${Email__From}
       - Email__Password=${Email__Password}
       - Email__SmtpHost=${Email__SmtpHost}
       - Email__SmtpPort=${Email__SmtpPort}
+      # Test Mode (for e2e testing)
+      - TestMode__Enabled=${TestMode__Enabled}
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=public-wan"

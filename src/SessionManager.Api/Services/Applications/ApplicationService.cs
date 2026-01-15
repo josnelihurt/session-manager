@@ -163,6 +163,21 @@ public class ApplicationService : IApplicationService
         return RoleMapper.ToDto(role);
     }
 
+    public async Task<RoleDto?> UpdateRoleAsync(Guid roleId, CreateRoleRequest request)
+    {
+        var role = await _dbContext.Roles.FindAsync(roleId);
+        if (role == null) return null;
+
+        role.Name = request.Name;
+        role.PermissionsJson = request.Permissions != null
+            ? JsonSerializer.Serialize(request.Permissions)
+            : "{}";
+
+        await _dbContext.SaveChangesAsync();
+
+        return RoleMapper.ToDto(role);
+    }
+
     public async Task<bool> DeleteRoleAsync(Guid roleId)
     {
         var role = await _dbContext.Roles.FindAsync(roleId);

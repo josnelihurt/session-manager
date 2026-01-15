@@ -12,6 +12,7 @@ public interface IApplicationService
     Task<ApplicationDto?> UpdateAsync(Guid id, CreateApplicationRequest request);
     Task<bool> DeleteAsync(Guid id);
     Task<RoleDto> CreateRoleAsync(Guid applicationId, CreateRoleRequest request);
+    Task<RoleDto?> UpdateRoleAsync(Guid roleId, CreateRoleRequest request);
     Task<bool> DeleteRoleAsync(Guid roleId);
     Task SeedFromConfigAsync(string[] allowedApplications);
 }

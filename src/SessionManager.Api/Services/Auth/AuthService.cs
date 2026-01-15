@@ -34,14 +34,8 @@ public class AuthService : IAuthService
     private bool CalculateCanImpersonate(User user)
     {
         // Super Admins always have impersonation permission
-        if (user.IsSuperAdmin) return true;
-
-        // Check if user has impersonate permission in any role
-        return _dbContext.Entry(user)
-            .Collection(u => u.UserRoles)
-            .Query()
-            .Any(ur => ur.Role.PermissionsJson != null &&
-                      ur.Role.PermissionsJson.Contains("\"impersonate\":true"));
+        // For other users, use the CanImpersonate field
+        return user.IsSuperAdmin || user.CanImpersonate;
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request, string ipAddress, string userAgent)

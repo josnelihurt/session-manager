@@ -92,6 +92,21 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Set user can impersonate permission
+    /// </summary>
+    [HttpPut("{userId}/can-impersonate")]
+    public async Task<ActionResult> SetCanImpersonate(Guid userId, [FromBody] bool canImpersonate)
+    {
+        var result = await _userService.SetCanImpersonateAsync(userId, canImpersonate);
+        if (!result)
+        {
+            return BadRequest(new { error = "Cannot modify impersonate permission. User may not exist or is a super admin." });
+        }
+
+        return Ok(new { message = $"User impersonate permission {(canImpersonate ? "enabled" : "disabled")}" });
+    }
+
+    /// <summary>
     /// Delete a user (cannot delete super admin)
     /// </summary>
     [HttpDelete("{userId}")]

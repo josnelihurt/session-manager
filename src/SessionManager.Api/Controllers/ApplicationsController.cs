@@ -143,4 +143,21 @@ public class ApplicationsController : ControllerBase
 
         return Ok(new { message = "Role deleted" });
     }
+
+    /// <summary>
+    /// Update a role
+    /// </summary>
+    [HttpPut("roles/{roleId}")]
+    public async Task<ActionResult<RoleDto>> UpdateRole(
+        Guid roleId,
+        [FromBody] CreateRoleRequest request)
+    {
+        var role = await _applicationService.UpdateRoleAsync(roleId, request);
+        if (role == null)
+        {
+            return NotFound(new { error = "Role not found" });
+        }
+
+        return Ok(role);
+    }
 }

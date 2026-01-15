@@ -7,11 +7,9 @@ public static class UserMapper
 {
     public static UserDto ToDto(User user)
     {
-        // Check if user has impersonate permission in any role
-        bool canImpersonate = user.IsSuperAdmin ||
-            user.UserRoles
-                .Any(ur => ur.Role.PermissionsJson != null &&
-                          ur.Role.PermissionsJson.Contains("\"impersonate\":true"));
+        // Super admins always have impersonate permission
+        // For other users, use the CanImpersonate field
+        bool canImpersonate = user.IsSuperAdmin || user.CanImpersonate;
 
         return new UserDto(
             Id: user.Id,

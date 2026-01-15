@@ -122,6 +122,26 @@ public class UserService : IUserService
         return true;
     }
 
+    public async Task<bool> SetCanImpersonateAsync(Guid userId, bool canImpersonate)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null) return false;
+
+        // Prevent setting impersonate for super admins (they always have it)
+        if (user.IsSuperAdmin)
+        {
+            _logger.LogWarning("Cannot set CanImpersonate for super admin user {UserId}", userId);
+            return false;
+        }
+
+        user.CanImpersonate = canImpersonate;
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} CanImpersonate set to {CanImpersonate}", userId, canImpersonate);
+
+        return true;
+    }
+
     public async Task<bool> DeleteAsync(Guid userId)
     {
         var user = await _dbContext.Users

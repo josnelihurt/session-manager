@@ -9,6 +9,7 @@ public class User
     public string Provider { get; set; } = "local";
     public string? ProviderId { get; set; }
     public bool IsSuperAdmin { get; set; }
+    public bool CanImpersonate { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

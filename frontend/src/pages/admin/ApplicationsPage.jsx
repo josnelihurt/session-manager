@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AdminLayout } from '../../components/Layout/AdminLayout'
-import { getAllApplications, createApplication, createApplicationRole, deleteApplicationRole } from '../../api'
+import { getAllApplications, createApplication, createApplicationRole, deleteApplicationRole, updateApplicationRole } from '../../api'
 
 export function ApplicationsPage() {
   const [applications, setApplications] = useState([])
@@ -8,12 +8,16 @@ export function ApplicationsPage() {
   const [error, setError] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showRoleModal, setShowRoleModal] = useState(false)
+  const [showEditRoleModal, setShowEditRoleModal] = useState(false)
   const [selectedApp, setSelectedApp] = useState(null)
+  const [selectedRole, setSelectedRole] = useState(null)
 
   const [url, setUrl] = useState('')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [roleName, setRoleName] = useState('')
+  const [editRoleName, setEditRoleName] = useState('')
+  const [editPermissions, setEditPermissions] = useState({})
 
   useEffect(() => {
     loadData()
@@ -74,6 +78,51 @@ export function ApplicationsPage() {
     }
   }
 
+  const openEditRoleModal = (role) => {
+    setSelectedRole(role)
+    setEditRoleName(role.name)
+    setEditPermissions(role.permissions || {})
+    setShowEditRoleModal(true)
+  }
+
+  const handleUpdateRole = async (e) => {
+    e.preventDefault()
+    if (!selectedRole) return
+
+    try {
+      await updateApplicationRole(selectedRole.id, editRoleName, editPermissions)
+      setShowEditRoleModal(false)
+      setSelectedRole(null)
+      setEditRoleName('')
+      setEditPermissions({})
+      loadData()
+      if (selectedApp) {
+        const updated = await getAllApplications()
+        setSelectedApp(updated.find(a => a.id === selectedApp.id) || null)
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update role')
+    }
+  }
+
+  const togglePermission = (key) => {
+    setEditPermissions(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
+  }
+
+  const formatPermissions = (permissions) => {
+    if (!permissions || Object.keys(permissions).length === 0) {
+      return <span className="permissions-empty">No permissions</span>
+    }
+    return Object.entries(permissions)
+      .filter(([_, value]) => value)
+      .map(([key, _]) => (
+        <span key={key} className="permission-tag">{key}</span>
+      ))
+  }
+
   if (loading) return <AdminLayout title="Applications"><p>Loading...</p></AdminLayout>
 
   return (
@@ -110,6 +159,7 @@ export function ApplicationsPage() {
               <thead>
                 <tr>
                   <th>Role</th>
+                  <th>Permissions</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -117,7 +167,15 @@ export function ApplicationsPage() {
                 {app.roles.map((role) => (
                   <tr key={role.id}>
                     <td>{role.name}</td>
+                    <td className="permissions-cell">{formatPermissions(role.permissions)}</td>
                     <td>
+                      <button
+                        onClick={() => openEditRoleModal(role)}
+                        className="btn-icon"
+                        title="Edit role permissions"
+                      >
+                        ✎
+                      </button>
                       <button
                         onClick={() => handleDeleteRole(role.id)}
                         className="btn-icon btn-danger"
@@ -210,6 +268,78 @@ export function ApplicationsPage() {
                 </button>
                 <button type="submit" className="btn btn-primary">
                   Create Role
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditRoleModal && selectedRole && (
+        <div className="modal-overlay" onClick={() => setShowEditRoleModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Role: {selectedRole.name}</h2>
+            <form onSubmit={handleUpdateRole}>
+              <div className="form-group">
+                <label>Role Name</label>
+                <input
+                  type="text"
+                  value={editRoleName}
+                  onChange={(e) => setEditRoleName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Permissions</label>
+                <div className="permissions-editor">
+                  <label className="permission-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editPermissions.impersonate || false}
+                      onChange={() => togglePermission('impersonate')}
+                    />
+                    <span>Can Impersonate Users</span>
+                  </label>
+                  <label className="permission-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editPermissions.read || false}
+                      onChange={() => togglePermission('read')}
+                    />
+                    <span>Read</span>
+                  </label>
+                  <label className="permission-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editPermissions.write || false}
+                      onChange={() => togglePermission('write')}
+                    />
+                    <span>Write</span>
+                  </label>
+                  <label className="permission-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editPermissions.delete || false}
+                      onChange={() => togglePermission('delete')}
+                    />
+                    <span>Delete</span>
+                  </label>
+                  <label className="permission-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={editPermissions.admin || false}
+                      onChange={() => togglePermission('admin')}
+                    />
+                    <span>Admin</span>
+                  </label>
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button type="button" onClick={() => setShowEditRoleModal(false)} className="btn">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Update Role
                 </button>
               </div>
             </form>

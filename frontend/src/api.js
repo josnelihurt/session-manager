@@ -91,6 +91,11 @@ export const setUserActive = async (userId, isActive) => {
   return response.data
 }
 
+export const setUserCanImpersonate = async (userId, canImpersonate) => {
+  const response = await apiClient.put(`/users/${userId}/can-impersonate`, canImpersonate)
+  return response.data
+}
+
 export const deleteUser = async (userId) => {
   const response = await apiClient.delete(`/users/${userId}`)
   return response.data
@@ -130,6 +135,11 @@ export const createApplicationRole = async (applicationId, name, permissions) =>
 
 export const deleteApplicationRole = async (roleId) => {
   const response = await apiClient.delete(`/applications/roles/${roleId}`)
+  return response.data
+}
+
+export const updateApplicationRole = async (roleId, name, permissions) => {
+  const response = await apiClient.put(`/applications/roles/${roleId}`, { name, permissions })
   return response.data
 }
 

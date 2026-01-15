@@ -3,7 +3,7 @@ import { AdminLayout } from '../../components/Layout/AdminLayout'
 import { RoleSelector } from '../../components/RoleSelector'
 import { ImpersonateModal } from '../../components/ImpersonateModal'
 import { useAuth } from '../../contexts/AuthContext'
-import { getAllApplications, assignUserRoles, removeUserRole, setUserActive, deleteUser, getActiveImpersonationSessions, forceEndImpersonationSession } from '../../api'
+import { getAllApplications, assignUserRoles, removeUserRole, setUserActive, setUserCanImpersonate, deleteUser, getActiveImpersonationSessions, forceEndImpersonationSession } from '../../api'
 
 export function UsersPage() {
   const [users, setUsers] = useState([])
@@ -91,6 +91,20 @@ export function UsersPage() {
       setSelectedUser(updatedUser)
     } catch (err) {
       setError('Failed to update roles')
+    }
+  }
+
+  const handleCanImpersonateChange = async (checked) => {
+    if (!selectedUser) return
+
+    try {
+      await setUserCanImpersonate(selectedUser.id, checked)
+      const updatedUsers = await fetch('/api/users').then(r => r.json())
+      setUsers(updatedUsers)
+      const updatedUser = updatedUsers.find(u => u.id === selectedUser.id)
+      setSelectedUser(updatedUser)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update impersonate permission')
     }
   }
 
@@ -333,6 +347,19 @@ export function UsersPage() {
               onRoleToggle={(roleId, checked) => handleRoleChange(roleId, checked)}
               label="Application Roles"
             />
+
+            {!selectedUser.isSuperAdmin && (
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={selectedUser.canImpersonate || false}
+                    onChange={(e) => handleCanImpersonateChange(e.target.checked)}
+                  />
+                  <span>Can Impersonate Users</span>
+                </label>
+              </div>
+            )}
 
             <button
               onClick={() => setShowRoleModal(false)}

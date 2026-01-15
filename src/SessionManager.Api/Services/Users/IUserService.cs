@@ -10,5 +10,6 @@ public interface IUserService
     Task<bool> AssignRolesAsync(Guid userId, Guid[] roleIds);
     Task<bool> RemoveRoleAsync(Guid userId, Guid roleId);
     Task<bool> SetActiveAsync(Guid userId, bool isActive);
+    Task<bool> SetCanImpersonateAsync(Guid userId, bool canImpersonate);
     Task<bool> DeleteAsync(Guid userId);
 }
