@@ -35,6 +35,7 @@ public class SessionManagerDbContext : DbContext
             entity.Property(e => e.Provider).HasColumnName("provider").HasMaxLength(50);
             entity.Property(e => e.ProviderId).HasColumnName("provider_id").HasMaxLength(255);
             entity.Property(e => e.IsSuperAdmin).HasColumnName("is_super_admin");
+            entity.Property(e => e.CanImpersonate).HasColumnName("can_impersonate");
             entity.Property(e => e.IsActive).HasColumnName("is_active");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
