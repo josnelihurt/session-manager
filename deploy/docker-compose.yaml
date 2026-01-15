@@ -118,3 +118,6 @@ networks:
   public-wan:
     external: true
     name: public-wan
+  iot-internal:
+    external: true
+    name: iot-internal
