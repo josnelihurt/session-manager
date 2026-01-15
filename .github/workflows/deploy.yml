@@ -152,7 +152,7 @@ jobs:
 
             # Start containers
             echo "Starting containers..."
-            docker compose -f session-manager.yaml up -d
+            docker compose --env-file .env -f session-manager.yaml up -d
 
             # Wait for containers to be healthy
             echo "Waiting for containers to be ready..."
