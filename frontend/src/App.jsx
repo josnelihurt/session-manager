@@ -43,6 +43,26 @@ function AdminRoute({ children }) {
   return children
 }
 
+// Route for Users page - allows Super Admins and users with canImpersonate permission
+function UsersRoute({ children }) {
+  const { user, loading, isSuperAdmin, canImpersonate } = useAuth()
+
+  if (loading) {
+    return <div className="app"><div className="container">Loading...</div></div>
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  // Allow Super Admins and users with canImpersonate permission
+  if (!isSuperAdmin && !canImpersonate) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return children
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -70,9 +90,9 @@ function App() {
           <Route
             path="/admin/users"
             element={
-              <AdminRoute>
+              <UsersRoute>
                 <UsersPage />
-              </AdminRoute>
+              </UsersRoute>
             }
           />
           <Route

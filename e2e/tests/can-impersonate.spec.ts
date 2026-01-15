@@ -122,8 +122,12 @@ test.describe('Can Impersonate Permission - E2E', () => {
     const initialState = await canImpersonateCheckbox.isChecked();
     expect(initialState).toBe(false);
 
-    // Toggle the checkbox
+    // Toggle the checkbox - this triggers an API call
     await canImpersonateCheckbox.click();
+
+    // Wait for the API call to complete and state to update
+    // The checkbox update is asynchronous, so we need to wait for the change to reflect
+    await page.waitForTimeout(500);
 
     // Verify the checkbox is now checked
     const newState = await canImpersonateCheckbox.isChecked();
